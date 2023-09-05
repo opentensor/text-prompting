@@ -53,19 +53,19 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 # loading version from setup.py
-with codecs.open(os.path.join(here, 'template/__init__.py'), encoding='utf-8') as init_file:
+with codecs.open(os.path.join(here, 'validators/__init__.py'), encoding='utf-8') as init_file:
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", init_file.read(), re.M)
     version_string = version_match.group(1)
 
 setup(
-    name='bittensor_subnet_template', # TODO(developer): Change this value to your module subnet name.
+    name='validators', # TODO(developer): Change this value to your module subnet name.
     version=version_string,    
-    description='bittensor_subnet_template', # TODO(developer): Change this value to your module subnet description.
+    description='validators', # TODO(developer): Change this value to your module subnet description.
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/opentensor/bittensor-subnet-template', # TODO(developer): Change this url to your module subnet github url.
     author='bittensor.com', # TODO(developer): Change this value to your module subnet author name.
-    packages=find_packages(),
+    packages=['validators'],
     include_package_data=True,
     author_email='', # TODO(developer): Change this value to your module subnet author email.
     license='MIT',

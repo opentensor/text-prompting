@@ -1,7 +1,5 @@
 # The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2021 Yuma Rao
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -17,182 +15,289 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# Bittensor Validator Template:
-# TODO(developer): Rewrite based on protocol defintion.
-
-# Step 1: Import necessary libraries and modules
-import os
-import time
+import copy
 import torch
-import argparse
-import traceback
+import asyncio
 import bittensor as bt
+from traceback import print_exception
 
-# import this repo
 import prompting
+import validators
 
+from validators.dataset import Dataset, MockDataset
+from validators.gating import GatingModel, SentenceEmbedGatingModel
+from validators.mock import MockDendrite, MockRewardModel, MockGatingModel
 
-# Step 2: Set up the configuration parser
-# This function is responsible for setting up and parsing command-line arguments.
-def get_config():
+# Load local forward function.
+from validators.config import add_args, check_config, config
+from validators.forward import forward
+from validators.utils import should_checkpoint, checkpoint, should_reinit_wandb, reinit_wandb, load_state, save_state, init_wandb
+from validators.weights import should_set_weights, set_weights
+from validators.misc import ttl_get_block
 
-    parser = argparse.ArgumentParser()
-    # TODO(developer): Adds your custom validator arguments to the parser.
-    parser.add_argument( '--axon.port', type=int, default=8099, help='Port to run the axon on.' )
-    # Subtensor network to connect to
-    parser.add_argument( '--subtensor.network', default='test', help='Bittensor network to connect to.' )
-    # Chain endpoint to connect to
-    parser.add_argument( '--subtensor.chain_endpoint', default='wss://test.finney.opentensor.ai:443', help='Chain endpoint to connect to.' )
-    # Adds override arguments for network and netuid.
-    parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
-    # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
-    bt.subtensor.add_args(parser)
-    # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
-    bt.logging.add_args(parser)
-    # Adds wallet specific arguments i.e. --wallet.name ..., --wallet.hotkey ./. or --wallet.path ...
-    bt.wallet.add_args(parser)
-    # Parse the config (will take command-line arguments if provided)
-    # To print help message, run python3 template/miner.py --help
-    config =  bt.config(parser)
+# Load gating models
+from validators.reward import (
+    Blacklist,
+    TaskValidator,
+    NSFWRewardModel,
+    DirectPreferenceRewardModel,
+    OpenAssistantRewardModel,
+    ReciprocateRewardModel,
+    RelevanceRewardModel,
+    MockRewardModel,
+    DahoasRewardModel,
+    DiversityRewardModel,
+    PromptRewardModel,
+    RewardModelType,
+)
 
-    # Step 3: Set up logging directory
-    # Logging is crucial for monitoring and debugging purposes.
-    config.full_path = os.path.expanduser(
-        "{}/{}/{}/netuid{}/{}".format(
-            config.logging.logging_dir,
-            config.wallet.name,
-            config.wallet.hotkey,
-            config.netuid,
-            'validator',
-        )
-    )
-    # Ensure the logging directory exists.
-    if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=True)
+class neuron:
+    @classmethod
+    def check_config(cls, config: "bt.Config"):
+        check_config(cls, config)
 
-    # Return the parsed config.
-    return config
+    @classmethod
+    def add_args(cls, parser):
+        add_args(cls, parser)
 
-def main( config ):
-    # Set up logging with the provided configuration and directory.
-    bt.logging(config=config, logging_dir=config.full_path)
-    bt.logging.info(f"Running validator for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
-    # Log the configuration for reference.
-    bt.logging.info(config)
+    @classmethod
+    def config(cls):
+        return config(cls)
 
-    # Step 4: Build Bittensor validator objects
-    # These are core Bittensor classes to interact with the network.
-    bt.logging.info("Setting up bittensor objects.")
+    subtensor: "bt.subtensor"
+    wallet: "bt.wallet"
+    metagraph: "bt.metagraph"
 
-    # The wallet holds the cryptographic key pairs for the validator.
-    wallet = bt.wallet( config = config )
-    bt.logging.info(f"Wallet: {wallet}")
+    def __init__(self):
+        self.config = neuron.config()
+        self.check_config(self.config)
+        bt.logging(config=self.config, logging_dir=self.config.neuron.full_path)
+        print(self.config)
+        bt.logging.info("neuron.__init__()")
 
-    # The subtensor is our connection to the Bittensor blockchain.
-    subtensor = bt.subtensor( config = config )
-    bt.logging.info(f"Subtensor: {subtensor}")
+        # Init device.
+        bt.logging.debug("loading", "device")
+        self.device = torch.device(self.config.neuron.device)
+        bt.logging.debug(str(self.device))
 
-    # Dendrite is the RPC client; it lets us send messages to other nodes (axons) in the network.
-    dendrite = bt.dendrite( wallet = wallet )
-    bt.logging.info(f"Dendrite: {dendrite}")
+        # Init subtensor
+        bt.logging.debug("loading", "subtensor")
+        self.subtensor = bt.subtensor(config=self.config)
+        bt.logging.debug(str(self.subtensor))
 
-    # The metagraph holds the state of the network, letting us know about other miners.
-    metagraph = subtensor.metagraph( config.netuid )
-    bt.logging.info(f"Metagraph: {metagraph}")
+        # Init wallet.
+        bt.logging.debug("loading", "wallet")
+        self.wallet = bt.wallet(config=self.config)
+        self.wallet.create_if_non_existent()
+        if not self.config.wallet._mock:
+            if not self.subtensor.is_hotkey_registered_on_subnet(hotkey_ss58=self.wallet.hotkey.ss58_address, netuid=self.config.netuid):
+                raise Exception(f'Wallet not currently registered on netuid {self.config.netuid}, please first register wallet before running')
+                
+        bt.logging.debug(str(self.wallet))
 
-    # Grab UID of the wallet.
-    uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
-    bt.logging.info(f"UID: {uid}")
+        # Init metagraph.
+        bt.logging.debug("loading", "metagraph")
+        self.metagraph = bt.metagraph(netuid=self.config.netuid, network=self.subtensor.network, sync=False) # Make sure not to sync without passing subtensor
+        self.metagraph.sync(subtensor=self.subtensor) # Sync metagraph with subtensor.
+        self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
+        bt.logging.debug(str(self.metagraph))
 
-    # Step 5: Connect the validator to the network
-    if wallet.hotkey.ss58_address not in metagraph.hotkeys:
-        bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again.")
-        exit()
-    else:
-        # Each miner gets a unique identity (UID) in the network for differentiation.
-        my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
-        bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
+        # Init Weights.
+        bt.logging.debug("loading", "moving_averaged_scores")
+        self.moving_averaged_scores = torch.zeros((self.metagraph.n)).to(self.device)
+        bt.logging.debug(str(self.moving_averaged_scores))
 
-    # Step 6: Set up initial scoring weights for validation
-    bt.logging.info("Building validation weights.")
-    alpha = 0.9
-    scores = torch.ones_like(metagraph.S, dtype=torch.float32)
-    bt.logging.info(f"Weights: {scores}")
+        # Dataset: used to generate the base prompts ( initial randomness. )
+        bt.logging.debug("loading", "dataset")
+        if self.config.neuron.mock_dataset:
+            self.dataset = MockDataset()
+        else:
+            self.dataset = Dataset()
+        bt.logging.debug(str(self.dataset))
 
-    # Step 7: The Main Validation Loop
-    bt.logging.info("Starting validator loop.")
-    step = 0
-    while True:
-        try:
-            # TODO(developer): Define how the validator selects a miner to query, how often, etc.
-            # Broadcast a query to all miners on the network.
-            responses = dendrite.query(
-                # Send the query to all axons in the network.
-                metagraph.axons,
-                # Construct a dummy query.
-                prompting.protocol.Prompting( 
-                    roles = ['user'], 
-                    messages = ['This is a test validator query. Who is your daddy, and what does he do?'] 
-                ), # Construct a dummy query.
-                # All responses have the deserialize function called on them before returning.
-                deserialize = True, 
+        # Init the gating model which learns which miners to select for each query.
+        bt.logging.debug("loading", "gating_model")
+        if not self.config.gating.num_uids:
+            self.config.gating.num_uids = self.subtensor.max_n(self.config.netuid)
+
+        if self.config.neuron.mock_gating_model:
+            self.gating_model = MockGatingModel(self.metagraph.n.item())
+        elif self.config.neuron.use_custom_gating_model:
+            self.gating_model = SentenceEmbedGatingModel(metagraph=self.metagraph, config=self.config).to(self.device)
+        else:
+            self.gating_model = GatingModel(metagraph=self.metagraph, config=self.config).to(self.device)
+        bt.logging.debug(str(self.gating_model))
+
+        if not self.config.neuron.axon_off:
+            bt.logging.debug('serving ip to chain...')
+            try:
+                axon = bt.axon( 
+                    wallet=self.wallet, metagraph=self.metagraph, config=self.config 
+                )
+
+                try:
+                    self.subtensor.serve_axon(
+                        netuid=self.config.netuid,
+                        axon=axon,
+                        use_upnpc=False,
+                        wait_for_finalization=True,
+                    )
+                except Exception as e:
+                    bt.logging.error(f'Failed to serve Axon with exception: {e}')
+                    pass
+
+                del axon
+            except Exception as e:
+                bt.logging.error(f'Failed to create Axon initialize with exception: {e}')
+                pass
+
+        else:
+            bt.logging.debug('axon off, not serving ip to chain.')
+
+        # Dendrite pool for querying the network during  training.
+        bt.logging.debug("loading", "dendrite_pool")
+        if self.config.neuron.mock_dendrite_pool:
+            self.dendrite = MockDendrite()
+        else:
+            self.dendrite = bt.dendrite( wallet = self.wallet )
+        bt.logging.debug(str(self.dendrite_pool))
+
+        # Init Reward model
+        bt.logging.debug("loading", "reward_functions")
+        if self.config.neuron.mock_reward_models:
+            self.reward_functions = []
+            self.reward_weights = []
+            self.masking_functions = [
+                MockRewardModel(RewardModelType.blacklist.value),
+                MockRewardModel(RewardModelType.nsfw.value),
+            ]
+            bt.logging.debug(str(self.reward_functions))
+        else:
+            self.reward_weights = torch.tensor(
+                [
+                    self.config.reward.dpo_weight,
+                    self.config.reward.rlhf_weight,
+                    self.config.reward.reciprocate_weight,
+                    self.config.reward.dahoas_weight,
+                    self.config.reward.prompt_based_weight,
+                ],
+                dtype=torch.float32,
+            ).to(self.device)
+
+            # Ensure reward function weights sum to 1.
+            if self.reward_weights.sum() != 1:
+                message = (
+                    f"Reward function weights do not sum to 1 (Current sum: {self.reward_weights.sum()}.)"
+                    f"Check your reward config file at `reward/config.py` or ensure that all your cli reward flags sum to 1."
+                )
+                bt.logging.error(message)
+                raise Exception(message)
+
+            self.reward_functions = [
+                DirectPreferenceRewardModel(device=self.device)
+                if self.config.reward.dpo_weight > 0
+                else MockRewardModel(RewardModelType.dpo.value),
+                OpenAssistantRewardModel(device=self.device)
+                if self.config.reward.rlhf_weight > 0
+                else MockRewardModel(RewardModelType.rlhf.value),
+                ReciprocateRewardModel(device=self.device)
+                if self.config.reward.reciprocate_weight > 0
+                else MockRewardModel(RewardModelType.reciprocate.value),
+                DahoasRewardModel(path=self.config.neuron.full_path, device=self.device)
+                if self.config.reward.dahoas_weight > 0
+                else MockRewardModel(RewardModelType.dahoas.value),
+                PromptRewardModel(device=self.device)
+                if self.config.reward.prompt_based_weight > 0
+                else MockRewardModel(RewardModelType.prompt.value),
+            ]
+
+            if len(self.reward_functions) != len(self.reward_weights):
+                message = (
+                    f"Length of reward function weights and reward functions do not match. "
+                    f"Reward functions: {len(self.reward_functions)}, Reward weights: {len(self.reward_weights)}"
+                )
+
+                bt.logging.error(message)
+                raise Exception(message)
+            
+            # Masking functions
+            self.blacklist = (
+                Blacklist() if not self.config.neuron.blacklist_off else MockRewardModel(RewardModelType.blacklist.value)
+            )
+            task_validator = (
+                TaskValidator() if not self.config.neuron.task_validator_off
+                else MockRewardModel(RewardModelType.task_validator.value)
+            )
+            relevance_model = (
+                RelevanceRewardModel(device=self.device) if not self.config.neuron.relevance_off
+                else MockRewardModel(RewardModelType.relevance.value)
+            )
+            self.diversity_model = (
+                DiversityRewardModel(device=self.device) if not self.config.neuron.diversity_off
+                else MockRewardModel(RewardModelType.diversity.value)
+            )
+            nsfw_model = (
+                NSFWRewardModel(device=self.device) if not self.config.neuron.nsfw_off
+                else MockRewardModel(RewardModelType.nsfw.value)              
             )
 
-            # Log the results for monitoring purposes.
-            bt.logging.info(f"Received responses: {responses}")
+            self.masking_functions = [self.blacklist, task_validator, relevance_model, self.diversity_model, nsfw_model]
+            bt.logging.debug(str(self.reward_functions))
+            bt.logging.debug(str(self.masking_functions))
 
-            # TODO(developer): Define how the validator scores responses.
-            # Adjust the scores based on responses from miners.
-            for i, resp_i in enumerate(responses):
-                # Initialize the score for the current miner's response.
-                score = 0
+        # Init the event loop.
+        self.loop = asyncio.get_event_loop()
 
-                # Check if the miner has provided the correct response by doubling the dummy input.
-                # If correct, set their score for this round to 1.
-                if resp_i == step * 2:
-                    score = 1
+        # Init wandb.
+        if not self.config.wandb.off:
+            bt.logging.debug("loading", "wandb")
+            init_wandb(self)
 
-                # Update the global score of the miner.
-                # This score contributes to the miner's weight in the network.
-                # A higher weight means that the miner has been consistently responding correctly.
-                scores[i] = alpha * scores[i] + (1 - alpha) * score
+        if self.config.neuron.epoch_length_override:
+            self.config.neuron.epoch_length = self.config.neuron.epoch_length_override
+        else:
+            self.config.neuron.epoch_length = self.subtensor.validator_epoch_length(self.config.netuid)
 
-            # Periodically update the weights on the Bittensor blockchain.
-            if (step + 1) % 100 == 0:
-                # TODO(developer): Define how the validator normalizes scores before setting weights.
-                weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
-                bt.logging.info(f"Setting weights: {weights}")
-                # This is a crucial step that updates the incentive mechanism on the Bittensor blockchain.
-                # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
-                result = subtensor.set_weights(
-                    netuid = config.netuid, # Subnet to set weights on.
-                    wallet = wallet, # Wallet to sign set weights using hotkey.
-                    uids = metagraph.uids, # Uids of the miners to set weights for.
-                    weights = weights, # Weights to set for the miners.
-                    wait_for_inclusion = True
-                )
-                if result: bt.logging.success('Successfully set weights.')
-                else: bt.logging.error('Failed to set weights.') 
+        self.prev_block = ttl_get_block(self)
+        self.step = 0
 
-            # End the current step and prepare for the next iteration.
-            step += 1
-            # Resync our local state with the latest state from the blockchain.
-            metagraph = subtensor.metagraph(config.netuid)
-            # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
-            time.sleep(bt.__blocktime__)
+    def run(self):
+        bt.logging.info("run()")
+        load_state(self)
+        checkpoint(self)
+        try:
+            while True:
+                bt.logging.info(f"step({self.step}) block({ttl_get_block( self )})")
 
-        # If we encounter an unexpected error, log it for debugging.
-        except RuntimeError as e:
-            bt.logging.error(e)
-            traceback.print_exc()
+                # Run multiple forwards.
+                async def run_forward():
+                    coroutines = [forward(self) for _ in range(self.config.neuron.num_concurrent_forwards)]
+                    await asyncio.gather(*coroutines)
 
-        # If the user interrupts the program, gracefully exit.
-        except KeyboardInterrupt:
-            bt.logging.success("Keyboard interrupt detected. Exiting validator.")
-            exit()
+                self.loop.run_until_complete(run_forward())
 
-# The main function parses the configuration and runs the validator.
+                # Resync the network state
+                if should_checkpoint(self):
+                    checkpoint(self)
+
+                # Set the weights on chain.
+                if should_set_weights(self):
+                    set_weights(self)
+                    save_state(self)
+
+                # Rollover wandb to a new run.
+                if should_reinit_wandb(self):
+                    reinit_wandb(self)
+
+                self.prev_block = ttl_get_block(self)
+                self.step += 1
+
+        except Exception as e:
+            bt.logging.error("Error in training loop", str(e))
+            bt.logging.debug(print_exception(value=e))
+
+def main():
+    neuron().run()
+
 if __name__ == "__main__":
-    # Parse the configuration.
-    config = get_config()
-    # Run the main function.
-    main( config )
+    main()
