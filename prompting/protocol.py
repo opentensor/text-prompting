@@ -17,11 +17,19 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# TODO(developer): Change this value when updating your code base.
-# Define the version of the template module.
-__version__ = "0.0.0"
-version_split = __version__.split(".")
-__spec_version__ = (1000 * int(version_split[0])) + (10 * int(version_split[1])) + (1 * int(version_split[2]))
+import pydantic
+import time
+import torch
+from typing import List
+import bittensor as bt
 
-# Import all submodules.
-from . import protocol
+class Prompting( bt.Synapse ):
+    class Config: 
+        validate_assignment = True
+
+    def deserialize( self ):
+        return self.completion
+
+    roles: List[str] = pydantic.Field(..., allow_mutation=False)
+    messages: List[str] = pydantic.Field(..., allow_mutation=False)
+    completion: str = None

@@ -29,7 +29,7 @@ import traceback
 import bittensor as bt
 
 # import this repo
-import template
+import prompting
 
 
 # Step 2: Set up the configuration parser
@@ -38,7 +38,11 @@ def get_config():
 
     parser = argparse.ArgumentParser()
     # TODO(developer): Adds your custom validator arguments to the parser.
-    parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
+    parser.add_argument( '--axon.port', type=int, default=8099, help='Port to run the axon on.' )
+    # Subtensor network to connect to
+    parser.add_argument( '--subtensor.network', default='test', help='Bittensor network to connect to.' )
+    # Chain endpoint to connect to
+    parser.add_argument( '--subtensor.chain_endpoint', default='wss://test.finney.opentensor.ai:443', help='Chain endpoint to connect to.' )
     # Adds override arguments for network and netuid.
     parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
@@ -95,6 +99,10 @@ def main( config ):
     metagraph = subtensor.metagraph( config.netuid )
     bt.logging.info(f"Metagraph: {metagraph}")
 
+    # Grab UID of the wallet.
+    uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
+    bt.logging.info(f"UID: {uid}")
+
     # Step 5: Connect the validator to the network
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
         bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again.")
@@ -121,13 +129,16 @@ def main( config ):
                 # Send the query to all axons in the network.
                 metagraph.axons,
                 # Construct a dummy query.
-                template.protocol.Dummy( dummy_input = step ), # Construct a dummy query.
+                prompting.protocol.Prompting( 
+                    roles = ['user'], 
+                    messages = ['This is a test validator query. Who is your daddy, and what does he do?'] 
+                ), # Construct a dummy query.
                 # All responses have the deserialize function called on them before returning.
                 deserialize = True, 
             )
 
             # Log the results for monitoring purposes.
-            bt.logging.info(f"Received dummy responses: {responses}")
+            bt.logging.info(f"Received responses: {responses}")
 
             # TODO(developer): Define how the validator scores responses.
             # Adjust the scores based on responses from miners.
@@ -146,7 +157,7 @@ def main( config ):
                 scores[i] = alpha * scores[i] + (1 - alpha) * score
 
             # Periodically update the weights on the Bittensor blockchain.
-            if (step + 1) % 2 == 0:
+            if (step + 1) % 100 == 0:
                 # TODO(developer): Define how the validator normalizes scores before setting weights.
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 bt.logging.info(f"Setting weights: {weights}")
