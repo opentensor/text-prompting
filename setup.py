@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 Opentensor Foundation
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -63,12 +62,12 @@ with codecs.open(
     version_string = version_match.group(1)
 
 setup(
-    name="prompting",  # TODO(developer): Change this value to your module subnet name.
+    name="prompting",
     version=version_string,
     description="The flagship Bittensor subnet focused on text-based intellgience and comprehension.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/opentensor/subnet-1",  # TODO(developer): Change this url to your module subnet github url.
+    url="https://github.com/opentensor/subnet-1",
     author="bittensor.com",
     packages=find_packages(),
     include_package_data=True,
