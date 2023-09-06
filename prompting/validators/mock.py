@@ -56,12 +56,17 @@ class MockRewardModel(torch.nn.Module):
 
 
 class MockDendriteResponse:
+
+    class mock_status:
+        status_code = 200
+
     completion = ""
     elapsed_time = 0
     is_success = True
     firewall_prompt = FirewallPrompt()
     followup_prompt = FollowupPrompt()
     answer_prompt = AnswerPrompt()
+    dendrite = mock_status()
 
     def __init__(self, message: str):
         if self.firewall_prompt.matches_template(message):

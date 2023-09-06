@@ -27,7 +27,7 @@ from prompting.validators.reward import DefaultRewardFrameworkConfig
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
     bt.logging.check_config(config)
-    bt.wallet.check_config(config)
+    #bt.wallet.check_config(config)
     #bt.subtensor.check_config(config)
 
     if config.mock:
