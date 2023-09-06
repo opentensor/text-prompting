@@ -21,7 +21,7 @@ import bittensor as bt
 from typing import List
 from .config import RewardModelType
 from .reward import BaseRewardModel
-from validators.prompts import AugmentPrompt, FollowupPrompt, AnswerPrompt
+from prompting.validators.prompts import AugmentPrompt, FollowupPrompt, AnswerPrompt
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 

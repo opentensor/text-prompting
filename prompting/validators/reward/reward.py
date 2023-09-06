@@ -126,4 +126,5 @@ class MockRewardModel( BaseRewardModel ):
         mock_reward = torch.tensor( [0 for _ in completion], dtype=torch.float32 )
         return mock_reward, mock_reward
 
-        
+    def reset(self):
+        return self

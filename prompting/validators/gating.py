@@ -20,7 +20,7 @@ import torch
 import bittensor as bt
 from transformers import AutoModel, AutoTokenizer
 from abc import ABC, abstractmethod
-from validators.utils import resync_linear_layer
+from prompting.validators.utils import resync_linear_layer
 
 
 class BaseGatingModel(torch.nn.Module, ABC):

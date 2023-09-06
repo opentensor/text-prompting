@@ -25,10 +25,10 @@ import random
 from loguru import logger
 from typing import List
 from dataclasses import asdict
-from validators.event import EventSchema
-from validators.misc import ttl_get_block
-from validators.prompts import followup_prompt, answer_prompt, augment_prompt
-from validators.utils import check_uid_availability
+from prompting.validators.event import EventSchema
+from prompting.validators.misc import ttl_get_block
+from prompting.validators.prompts import followup_prompt, answer_prompt, augment_prompt
+from prompting.validators.utils import check_uid_availability
 
 import prompting
 
@@ -77,15 +77,14 @@ async def run_step(self, prompt: str, k: int, timeout: float, name: str, exclude
 
     # Get the list of uids to query for this step.
     uids = get_random_uids(self, k=k, exclude=exclude).to(self.device)
-
-    axons = self.metagraph.axons[uids]
+    axons = [self.metagraph.axons[uid] for uid in uids]
     synapse = prompting.protocol.Prompting( 
         roles = ['user'], 
         messages = [prompt]
     )
 
     # Make calls to the network with the prompt.
-    responses: List[bt.DendriteCall] = await self.dendrite.query(
+    responses: List[bt.Synapse] = await self.dendrite.query(
         axons=axons,
         synapse=synapse,
         timeout=timeout,

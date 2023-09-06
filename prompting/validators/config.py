@@ -20,15 +20,15 @@ import torch
 import argparse
 import bittensor as bt
 from loguru import logger
-from validators.gating import BaseGatingModel
-from validators.reward import DefaultRewardFrameworkConfig
+from prompting.validators.gating import BaseGatingModel
+from prompting.validators.reward import DefaultRewardFrameworkConfig
 
 
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
     bt.logging.check_config(config)
     bt.wallet.check_config(config)
-    bt.subtensor.check_config(config)
+    #bt.subtensor.check_config(config)
 
     if config.mock:
         config.neuron.mock_reward_models = True

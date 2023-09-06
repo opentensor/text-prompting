@@ -18,8 +18,8 @@
 import torch
 import asyncio
 import bittensor as bt
-from validators.prompts import FirewallPrompt, FollowupPrompt, AnswerPrompt
-from validators.gating import BaseGatingModel
+from prompting.validators.prompts import FirewallPrompt, FollowupPrompt, AnswerPrompt
+from prompting.validators.gating import BaseGatingModel
 from typing import List
 
 
@@ -81,22 +81,18 @@ class MockDendriteResponse:
 
 
 class MockDendrite(torch.nn.Module):
-    def query(self, roles: List[str], synapse, axons: List[int], timeout: float):
-        return [MockDendriteResponse(synapse.messages[0]) for _ in axons]
 
-    async def async_forward(
+    async def query(
         self,
-        roles: List[str],
-        messages: List[str],
-        uids: List[int],
-        timeout: float = 12,
-        return_call=True,
+        synapse,
+        axons,
+        timeout
     ):
-        async def query():
+        async def test():
             await asyncio.sleep(0.01)
-            return [MockDendriteResponse(messages[0]) for _ in uids]
+            return [MockDendriteResponse(synapse.messages[0]) for _ in axons]
 
-        return await query()
+        return await test()
 
     def resync(self, metagraph):
         pass

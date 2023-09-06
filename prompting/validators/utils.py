@@ -20,9 +20,9 @@ import torch
 import wandb
 import copy
 import bittensor as bt
-import validators
-from validators.misc import ttl_get_block
-from validators.reward import MockRewardModel
+import prompting.validators as validators
+from prompting.validators.misc import ttl_get_block
+from prompting.validators.reward import MockRewardModel
 
 
 def should_reinit_wandb(self):
@@ -105,8 +105,6 @@ def resync_metagraph(self: 'validators.neuron.neuron'):
 
     if metagraph_axon_info_updated:
         bt.logging.info("Metagraph updated, re-syncing hotkeys, dendrite pool and moving averages")
-        # Reconstruct the dendrite pool with the new endpoints.
-        self.dendrite_pool.resync(self.metagraph)
 
         # Zero out all hotkeys that have been replaced.
         for uid, hotkey in enumerate(self.hotkeys):

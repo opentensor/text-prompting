@@ -22,21 +22,20 @@ import bittensor as bt
 from traceback import print_exception
 
 import prompting
-import validators
 
-from validators.dataset import Dataset, MockDataset
-from validators.gating import GatingModel, SentenceEmbedGatingModel
-from validators.mock import MockDendrite, MockRewardModel, MockGatingModel
+from prompting.validators.dataset import Dataset, MockDataset
+from prompting.validators.gating import GatingModel, SentenceEmbedGatingModel
+from prompting.validators.mock import MockDendrite, MockRewardModel, MockGatingModel
 
 # Load local forward function.
-from validators.config import add_args, check_config, config
-from validators.forward import forward
-from validators.utils import should_checkpoint, checkpoint, should_reinit_wandb, reinit_wandb, load_state, save_state, init_wandb
-from validators.weights import should_set_weights, set_weights
-from validators.misc import ttl_get_block
+from prompting.validators.config import add_args, check_config, config
+from prompting.validators.forward import forward
+from prompting.validators.utils import should_checkpoint, checkpoint, should_reinit_wandb, reinit_wandb, load_state, save_state, init_wandb
+from prompting.validators.weights import should_set_weights, set_weights
+from prompting.validators.misc import ttl_get_block
 
 # Load gating models
-from validators.reward import (
+from prompting.validators.reward import (
     Blacklist,
     TaskValidator,
     NSFWRewardModel,
@@ -160,7 +159,7 @@ class neuron:
             self.dendrite = MockDendrite()
         else:
             self.dendrite = bt.dendrite( wallet = self.wallet )
-        bt.logging.debug(str(self.dendrite_pool))
+        bt.logging.debug(str(self.dendrite))
 
         # Init Reward model
         bt.logging.debug("loading", "reward_functions")
@@ -172,6 +171,7 @@ class neuron:
                 MockRewardModel(RewardModelType.nsfw.value),
             ]
             bt.logging.debug(str(self.reward_functions))
+            self.blacklist = MockRewardModel(RewardModelType.blacklist.value)
         else:
             self.reward_weights = torch.tensor(
                 [
@@ -256,7 +256,7 @@ class neuron:
         if self.config.neuron.epoch_length_override:
             self.config.neuron.epoch_length = self.config.neuron.epoch_length_override
         else:
-            self.config.neuron.epoch_length = self.subtensor.validator_epoch_length(self.config.netuid)
+            self.config.neuron.epoch_length = 100
 
         self.prev_block = ttl_get_block(self)
         self.step = 0

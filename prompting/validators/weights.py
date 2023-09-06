@@ -20,8 +20,8 @@
 import wandb
 import torch
 import bittensor as bt
-from validators.misc import ttl_get_block
-import validators
+from prompting.validators.misc import ttl_get_block
+import prompting.validators as validators
 
 
 def should_set_weights(self) -> bool:
