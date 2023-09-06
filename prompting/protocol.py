@@ -23,11 +23,12 @@ import torch
 from typing import List
 import bittensor as bt
 
-class Prompting( bt.Synapse ):
-    class Config: 
+
+class Prompting(bt.Synapse):
+    class Config:
         validate_assignment = True
 
-    def deserialize( self ):
+    def deserialize(self):
         return self.completion
 
     roles: List[str] = pydantic.Field(..., allow_mutation=False)
