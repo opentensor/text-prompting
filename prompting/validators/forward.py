@@ -54,7 +54,7 @@ def get_random_uids(self, k: int, exclude: List[int] = None) -> torch.LongTensor
             avail_uids.append(uid)
             if uid_is_not_excluded:
                 candidate_uids.append(uid)
-    import pdb;pdb.set_trace()
+
     # Check if candidate_uids contain enough for querying, if not grab all avaliable uids
     available_uids = candidate_uids
     if len(candidate_uids) < k:

@@ -231,31 +231,31 @@ def add_args(cls, parser):
         "--neuron.blacklist_off",
         action="store_true",
         help="Dont apply the blacklist reward model",
-        default=True,
+        default=False,
     )
     parser.add_argument(
         "--neuron.nsfw_off",
         action="store_true",
         help="Dont apply the nsfw reward model",
-        default=True,
+        default=False,
     )
     parser.add_argument(
         "--neuron.relevance_off",
         action="store_true",
         help="Dont apply the relevance reward model",
-        default=True,
+        default=False,
     )
     parser.add_argument(
         "--neuron.diversity_off",
         action="store_true",
         help="Dont apply the diversity reward model",
-        default=True,
+        default=False,
     )
     parser.add_argument(
         "--neuron.task_validator_off",
         action="store_true",
         help="Dont apply the task validator reward model",
-        default=True,
+        default=False,
     )    
 
     parser.add_argument(
