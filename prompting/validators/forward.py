@@ -45,7 +45,7 @@ def get_random_uids(self, k: int, exclude: List[int] = None) -> torch.LongTensor
     """
     candidate_uids = []
     avail_uids = []
-
+    
     for uid in range(self.metagraph.n.item()):
         uid_is_available = check_uid_availability(self.metagraph, uid, self.config.neuron.vpermit_tao_limit)
         uid_is_not_excluded = exclude is None or uid not in exclude
@@ -54,13 +54,12 @@ def get_random_uids(self, k: int, exclude: List[int] = None) -> torch.LongTensor
             avail_uids.append(uid)
             if uid_is_not_excluded:
                 candidate_uids.append(uid)
-                
+    import pdb;pdb.set_trace()
     # Check if candidate_uids contain enough for querying, if not grab all avaliable uids
     available_uids = candidate_uids
     if len(candidate_uids) < k:
         available_uids += random.sample([uid for uid in avail_uids if uid not in candidate_uids], k-len(candidate_uids))
-
-    uids = torch.tensor(random.sample(available_uids, k), dtype=torch.int64)
+    uids = torch.tensor(random.sample(available_uids, k))
     return uids
 
 
@@ -74,7 +73,6 @@ async def run_step(self, prompt: str, k: int, timeout: float, name: str, exclude
     # Record event start time.
     event = {"name": name}
     start_time = time.time()
-
     # Get the list of uids to query for this step.
     uids = get_random_uids(self, k=k, exclude=exclude).to(self.device)
     axons = [self.metagraph.axons[uid] for uid in uids]
@@ -84,7 +82,7 @@ async def run_step(self, prompt: str, k: int, timeout: float, name: str, exclude
     )
 
     # Make calls to the network with the prompt.
-    responses: List[bt.Synapse] = await self.dendrite.query(
+    responses: List[bt.Synapse] = await self.dendrite(
         axons=axons,
         synapse=synapse,
         timeout=timeout,
@@ -117,7 +115,7 @@ async def run_step(self, prompt: str, k: int, timeout: float, name: str, exclude
     best: str = completions[rewards.argmax(dim=0)].strip()
 
     # Get completion times
-    completion_times: List[float] = [comp.elapsed_time for comp in responses]
+    completion_times: List[float] = [comp.dendrite.process_time if comp.dendrite.process_time != None else 0 for comp in responses]
 
     # Compute forward pass rewards, assumes followup_uids and answer_uids are mutually exclusive.
     # shape: [ metagraph.n ]
@@ -138,12 +136,13 @@ async def run_step(self, prompt: str, k: int, timeout: float, name: str, exclude
             "prompt": prompt,
             "uids": uids.tolist(),
             "completions": completions,
-            "completion_times": completion_times,
+            "completion_times":completion_times,
             "rewards": rewards.tolist(),
             "gating_loss": gating_loss.item(),
             "best": best,
         }
     )
+
     bt.logging.debug("event:", str(event))
     if not self.config.neuron.dont_save_events:
         logger.log("EVENTS", "events", **event)
@@ -182,6 +181,7 @@ async def forward(self):
     base_text = augment_event["best"]
     base_prompt = augment_event["best"]
     exclude = augment_event["uids"]
+
     for k in range(self.config.neuron.num_followup_steps):
 
         # Get a followup question, given the summarized context.
