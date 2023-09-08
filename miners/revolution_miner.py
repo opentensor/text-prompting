@@ -149,10 +149,7 @@ class Miner(ABC):
         ) -> Union[Tuple[bool, str], bool]:
             raise NotImplementedError("blacklist not implemented in subclass")
     
-        if blacklist(self, _blacklist, synapse):
-            bt.logging.trace(f"Blacklisting {synapse.dendrite.hotkey}")
-            return True
-        return False
+        return blacklist(self, _blacklist, synapse)
 
     def priority(self, synapse: Prompting) -> float:
         """
@@ -171,10 +168,14 @@ class Miner(ABC):
         Returns:
             priority (:obj:`float`):
         """
-        return 0.
-        caller_uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
-        prirority = float(self.metagraph.S[caller_uid])
-        return prirority
+
+        def _priority(
+            synapse: "Prompting"
+        ) -> Union[Tuple[bool, str], bool]:
+            raise NotImplementedError("priority not implemented in subclass")
+    
+        return priority(self, _priority, synapse)
+
 
     def run(self):
         """

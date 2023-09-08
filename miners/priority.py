@@ -26,7 +26,7 @@ def record_request_timestamps(self, synapse: Prompting):
     if synapse.dendrite.hotkey not in self.request_timestamps:
         self.request_timestamps[synapse.dendrite.hotkey] = [0] * timestamp_length
 
-    self.request_timestamps[synapse.dendrite.hotkey].append(synapse.start_time)
+    self.request_timestamps[synapse.dendrite.hotkey].append(time.time())
     self.request_timestamps[synapse.dendrite.hotkey] = self.request_timestamps[
         synapse.dendrite.hotkey
     ][-timestamp_length:]
