@@ -17,6 +17,8 @@
 import time
 import wandb
 import bittensor as bt
+import traceback
+from prompting.protocol import Prompting
 from .set_weights import set_weights
 
 
@@ -129,10 +131,10 @@ def run(self):
 
     # If someone intentionally stops the miner, it'll safely terminate operations.
     except KeyboardInterrupt:
-        axon.stop()
+        self.axon.stop()
         bt.logging.success("Miner killed by keyboard interrupt.")
-        break
+        exit()
+    
     # In case of unforeseen errors, the miner will log the error and continue operations.
     except Exception as e:
         bt.logging.error(traceback.format_exc())
-        continue

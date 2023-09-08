@@ -20,6 +20,7 @@
 # Bittensor Miner Template:# Step 1: Import necessary libraries and modules
 import os
 import time
+import wandb
 import argparse
 import pydantic
 import threading
@@ -29,13 +30,13 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple
 
 import bittensor as bt
-from prompting import Prompting
+from prompting.protocol import Prompting
 
 from miners.priority import priority
 from miners.blacklist import blacklist
 from miners.run import run
 from miners.set_weights import set_weights
-from miners.config import config, check_config, get_config
+from miners.config import check_config, get_config
 
 
 class Miner(ABC):
@@ -147,7 +148,8 @@ class Miner(ABC):
         Returns:
             blacklisted (:obj:`bool`):
         """
-        if synapse.dendrite.hotkey not in metagraph.hotkeys:
+        return False
+        if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
             )
@@ -171,8 +173,9 @@ class Miner(ABC):
         Returns:
             priority (:obj:`float`):
         """
-        caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
-        prirority = float(metagraph.S[caller_uid])
+        return 0.
+        caller_uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
+        prirority = float(self.metagraph.S[caller_uid])
         return prirority
 
     def run(self):

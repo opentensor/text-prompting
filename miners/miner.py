@@ -26,13 +26,13 @@ from typing import List, Dict, Union, Tuple
 
 from .run import run
 from .mock import MockSubtensor
-from .config import config, check_config
+from .config import check_config, get_config
 
 
 class BaseMiner(ABC):
     @classmethod
     def config(cls) -> "bt.Config":
-        return config(cls)
+        return get_config()
 
     @classmethod
     @abstractmethod
