@@ -22,6 +22,5 @@ from . import forward
 from . import miner
 from . import mock
 from . import priority
-from . import prompting_miner
 from . import run
 from . import set_weights

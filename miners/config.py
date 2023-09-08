@@ -35,9 +35,7 @@ def check_config(cls, config: "bt.Config"):
         and subtensor if the configurations are not valid.
     """
     bt.axon.check_config(config)
-    bt.wallet.check_config(config)
     bt.logging.check_config(config)
-    bt.subtensor.check_config(config)
     full_path = os.path.expanduser(
         "{}/{}/{}/{}".format(
             config.logging.logging_dir,
