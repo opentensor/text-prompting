@@ -16,41 +16,41 @@
 # DEALINGS IN THE SOFTWARE.
 
 import wandb
+import time
 import bittensor as bt
 from typing import List, Dict, Union, Tuple, Callable
-import time
+from prompting.protocol import Prompting
 
-
-def record_request_timestamps(self, forward_call: "bt.TextPromptingForwardCall"):
+def record_request_timestamps(self, synapse: Prompting):
     timestamp_length = self.config.miner.priority.len_request_timestamps
-    if forward_call.src_hotkey not in self.request_timestamps:
-        self.request_timestamps[forward_call.src_hotkey] = [0] * timestamp_length
+    if synapse.dendrite.hotkey not in self.request_timestamps:
+        self.request_timestamps[synapse.dendrite.hotkey] = [0] * timestamp_length
 
-    self.request_timestamps[forward_call.src_hotkey].append(forward_call.start_time)
-    self.request_timestamps[forward_call.src_hotkey] = self.request_timestamps[
-        forward_call.src_hotkey
+    self.request_timestamps[synapse.dendrite.hotkey].append(synapse.start_time)
+    self.request_timestamps[synapse.dendrite.hotkey] = self.request_timestamps[
+        synapse.dendrite.hotkey
     ][-timestamp_length:]
 
     return self.request_timestamps
 
 
-def default_priority(self, forward_call: "bt.TextPromptingForwardCall") -> float:
+def default_priority(self, synapse: Prompting) -> float:
     # Check if the key is registered.
     registered = False
     if self.metagraph is not None:
-        registered = forward_call.src_hotkey in self.metagraph.hotkeys
+        registered = synapse.dendrite.hotkey in self.metagraph.hotkeys
 
     # Non-registered users have a default priority.
     if not registered:
         return self.config.miner.priority.default
 
     # If the user is registered, it has a UID.
-    uid = self.metagraph.hotkeys.index(forward_call.src_hotkey)
+    uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
     stake_amount = self.metagraph.S[uid].item()
 
     # request period
-    if forward_call.src_hotkey in self.request_timestamps:
-        period = time.time() - self.request_timestamps[forward_call.src_hotkey][-10]
+    if synapse.dendrite.hotkey in self.request_timestamps:
+        period = time.time() - self.request_timestamps[synapse.dendrite.hotkey][-10]
         period_scale = period / (
             self.config.miner.priority.time_stake_multiplicate * 60
         )
@@ -59,23 +59,23 @@ def default_priority(self, forward_call: "bt.TextPromptingForwardCall") -> float
     else:
         priority = self.config.miner.priority.default
 
-    record_request_timestamps(self, forward_call)
+    record_request_timestamps(self, synapse)
 
     return priority
 
 
 def priority(
-    self, func: Callable, forward_call: "bt.TextPromptingForwardCall"
+    self, func: Callable, synapse: Prompting
 ) -> float:
     # Check to see if the subclass has implemented a priority function.
     priority = None
     try:
         # Call the subclass priority function and return the result.
-        priority = func(forward_call)
+        priority = func(synapse)
 
     except NotImplementedError:
         # If the subclass has not implemented a priority function, we use the default priority.
-        priority = default_priority(self, forward_call)
+        priority = default_priority(self, synapse)
 
     except Exception as e:
         # An error occured in the subclass priority function.
@@ -84,7 +84,7 @@ def priority(
     finally:
         # If the priority is None, we use the default priority.
         if priority == None:
-            priority = default_priority(self, forward_call)
+            priority = default_priority(self, synapse)
 
         # Return the priority.
         return priority
