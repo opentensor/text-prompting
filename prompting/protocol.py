@@ -29,8 +29,8 @@ class Prompting(bt.Synapse):
         validate_assignment = True
 
     def deserialize(self):
-        return self.completion
+        return self
 
     roles: List[str] = pydantic.Field(..., allow_mutation=False)
     messages: List[str] = pydantic.Field(..., allow_mutation=False)
-    completion: str = None
+    completion: str = ''
