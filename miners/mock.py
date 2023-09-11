@@ -1,7 +1,5 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -17,18 +15,28 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# Bittensor Miner Template:# Step 1: Import necessary libraries and modules
-
-from miners.revolution_miner import Miner
-from prompting.protocol import Prompting
+import time
+import json
 import bittensor as bt
+from typing import List, Optional
 
-class TemplateMiner(Miner):
-    def prompt(self, synapse: Prompting) -> Prompting:
-        bt.logging.debug("In prompt!")
-        synapse.completion = "I am a chatbot"
-        return synapse
 
-# This is the main function, which runs the miner.
-if __name__ == "__main__":
-    TemplateMiner().run()
+class MockSubtensor:
+    def __init__(self, config: "bt.Config"):
+        self.config = config
+        self.mock_metagraph = bt.subtensor(self.config).metagraph(config.netuid)
+        self.start_time = time.time()
+
+    def serve_axon(self, netuid: int, axon: "bt.axon"):
+        return True
+
+    def register(self, netuid: int, wallet: "bt.Wallet"):
+        return True
+
+    def get_current_block(self):
+        return (
+            int((time.time() - self.start_time) / 12) + self.mock_metagraph.block.item()
+        )
+
+    def metagraph(self, netuid: int) -> "bt.Metagraph":
+        return self.mock_metagraph
