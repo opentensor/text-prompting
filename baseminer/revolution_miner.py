@@ -16,6 +16,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
+import copy
 import time
 import wandb
 import argparse
@@ -29,16 +30,17 @@ from typing import List, Dict, Tuple, Union
 import bittensor as bt
 from prompting.protocol import Prompting
 
-from miners.priority import priority
-from miners.blacklist import blacklist
-from miners.run import run
-from miners.set_weights import set_weights
-from miners.config import check_config, get_config
+from baseminer.priority import priority
+from baseminer.blacklist import blacklist
+from baseminer.run import run
+from baseminer.set_weights import set_weights
+from baseminer.config import check_config, get_config
+
 
 class Miner(ABC):
     """
     The Miner class is an abstract base class that defines the structure for Bittensor miners.
-    Subclasses should implement the `prompt` method to define their own response logic.
+    Subclassed should implement the `prompt` method to define their own response logic.
     The `blacklist` and `priority` methods can also be overridden to provide custom logic.
     """
 
@@ -52,8 +54,11 @@ class Miner(ABC):
             wallet: Bittensor Wallet object which holds cryptographic keys.
             subtensor: Bittensor Subtensor object which manages the blockchain connection.
         """
-        # Setup and check config
-        self.config = config or get_config()
+        # Setup base config from Miner.config() and merge with subclassed config.
+        base_config = copy.deepcopy(config or get_config())
+        self.config = self.config()
+        self.config.merge(base_config)
+
         check_config(Miner, self.config)
         bt.logging.info(self.config)  # TODO: duplicate print?
 
@@ -124,10 +129,19 @@ class Miner(ABC):
         self.request_timestamps: Dict = {}
 
     @abstractmethod
+    def config(self) -> "bt.Config":
+        ...
+
+    @classmethod
+    @abstractmethod
+    def add_args(cls, parser: argparse.ArgumentParser):
+        ...
+
+    @abstractmethod
     def prompt(self, synapse: Prompting) -> Prompting:
         ...
 
-    def blacklist(self, synapse: Prompting) -> bool:
+    def blacklist(self, synapse: Prompting) -> Tuple[bool, str]:
         """
         Default blacklist logic
 
@@ -144,11 +158,9 @@ class Miner(ABC):
         Returns:
             blacklisted (:obj:`bool`):
         """
-        def _blacklist(
-            synapse: "Prompting"
-        ) -> Union[Tuple[bool, str], bool]:
+        def _blacklist(synapse: "Prompting") -> Tuple[bool, str]:
             raise NotImplementedError("blacklist not implemented in subclass")
-    
+
         return blacklist(self, _blacklist, synapse)
 
     def priority(self, synapse: Prompting) -> float:
@@ -169,13 +181,10 @@ class Miner(ABC):
             priority (:obj:`float`):
         """
 
-        def _priority(
-            synapse: "Prompting"
-        ) -> Union[Tuple[bool, str], bool]:
+        def _priority(synapse: "Prompting") -> bool:
             raise NotImplementedError("priority not implemented in subclass")
     
         return priority(self, _priority, synapse)
-
 
     def run(self):
         """

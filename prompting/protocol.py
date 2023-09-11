@@ -31,6 +31,10 @@ class Prompting(bt.Synapse):
     def deserialize(self):
         return self
 
+    # @property
+    # def required_hash_fields(self) -> List[str]:
+    #     return ['messages']
+
     roles: List[str] = pydantic.Field(..., allow_mutation=False)
     messages: List[str] = pydantic.Field(..., allow_mutation=False)
     completion: str = ''
