@@ -17,7 +17,6 @@
 
 import time
 import json
-import openminers
 import bittensor as bt
 from typing import List, Optional
 

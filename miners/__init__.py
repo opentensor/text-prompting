@@ -19,7 +19,7 @@
 from . import blacklist
 from . import config
 from . import forward
-from . import miner
+from . import revolution_miner as miner
 from . import mock
 from . import priority
 from . import run
