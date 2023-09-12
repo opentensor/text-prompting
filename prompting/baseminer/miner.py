@@ -37,7 +37,6 @@ from prompting.baseminer.set_weights import set_weights
 from prompting.baseminer.config import check_config, get_config
 
 
-
 class Miner(ABC):
     """
     The Miner class is an abstract base class that defines the structure for Bittensor miners.
@@ -139,13 +138,13 @@ class Miner(ABC):
     @abstractmethod
     def config(self) -> "bt.Config":
         """
-        Abstract method for configuring the Miner. 
-        
-        Subclasses should implement this method to return a configuration object that dictates 
-        various settings and parameters for the miner's operation. The returned configuration 
-        object will typically contain parameters like network settings, logging preferences, 
+        Abstract method for configuring the Miner.
+
+        Subclasses should implement this method to return a configuration object that dictates
+        various settings and parameters for the miner's operation. The returned configuration
+        object will typically contain parameters like network settings, logging preferences,
         and other operational parameters.
-        
+
         Returns:
             bt.Config: A configuration object specific to the miner subclass.
         """
@@ -156,12 +155,12 @@ class Miner(ABC):
     def add_args(cls, parser: argparse.ArgumentParser):
         """
         Abstract class method to add miner-specific arguments to a command line parser.
-        
-        This method should be implemented by subclasses to introduce any command-line 
+
+        This method should be implemented by subclasses to introduce any command-line
         arguments that the miner might require for operation.
 
         Args:
-            parser (argparse.ArgumentParser): The command line argument parser to which 
+            parser (argparse.ArgumentParser): The command line argument parser to which
                 the miner-specific arguments should be added.
         """
         ...
@@ -170,18 +169,18 @@ class Miner(ABC):
     def prompt(self, synapse: Prompting) -> Prompting:
         """
         Abstract method to handle and respond to incoming requests to the miner.
-        
-        Subclasses should implement this method to define how the miner processes 
-        incoming requests and what responses should be sent back. The logic can include 
-        operations like data processing, validation, or any other computation as required 
+
+        Subclasses should implement this method to define how the miner processes
+        incoming requests and what responses should be sent back. The logic can include
+        operations like data processing, validation, or any other computation as required
         by the specific mining operation.
-        
+
         Args:
-            synapse (Prompting): The incoming request object encapsulating the details 
+            synapse (Prompting): The incoming request object encapsulating the details
                 of the request. This must contain `messages` and `roles` as fields.
 
         Returns:
-            Prompting: The response object that should be sent back in reply to the 
+            Prompting: The response object that should be sent back in reply to the
                 incoming request. This is essentially the filled synapse request object.
         """
         ...

@@ -24,8 +24,8 @@ from typing import List, Dict, Optional
 from prompting.baseminer.miner import Miner
 from prompting.protocol import Prompting
 
-class OpenAIMiner(Miner):
 
+class OpenAIMiner(Miner):
     @classmethod
     def add_args(cls, parser: argparse.ArgumentParser):
         parser.add_argument(
@@ -93,9 +93,14 @@ class OpenAIMiner(Miner):
         openai.api_key = api_key
 
     def prompt(self, synapse: Prompting) -> Prompting:
+        messages = [
+            {"role": role, "content": message}
+            for role, message in zip(synapse.roles, synapse.messages)
+        ]
+        bittensor.logging.debug(f"messages: {messages}")
         resp = openai.ChatCompletion.create(
             model=self.config.openai.model_name,
-            messages=list(zip(synapse.roles, synapse.messages)),
+            messages=messages,
             temperature=self.config.openai.temperature,
             max_tokens=self.config.openai.max_tokens,
             top_p=self.config.openai.top_p,
@@ -104,6 +109,7 @@ class OpenAIMiner(Miner):
             n=self.config.openai.n,
         )["choices"][0]["message"]["content"]
         synapse.completion = resp
+        bittensor.logging.debug(f"completion: {resp}")
         return synapse
 
 
