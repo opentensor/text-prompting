@@ -37,6 +37,7 @@ from baseminer.set_weights import set_weights
 from baseminer.config import check_config, get_config
 
 
+
 class Miner(ABC):
     """
     The Miner class is an abstract base class that defines the structure for Bittensor miners.
