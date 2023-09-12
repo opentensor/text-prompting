@@ -24,8 +24,17 @@ import bittensor as bt
 from typing import List, Dict
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+from prompting.baseminer.miner import Miner
+from prompting.protocol import Prompting
 
-class VicunaMiner(openminers.BasePromptingMiner):
+
+class VicunaMiner(Miner):
+    
+    def config(self) -> "bt.Config":
+        parser = argparse.ArgumentParser(description="OpenAI Miner Configs")
+        self.add_args(parser)
+        return btconfig(parser)
+
     @classmethod
     def add_args(cls, parser: argparse.ArgumentParser):
         parser.add_argument(
@@ -84,22 +93,22 @@ class VicunaMiner(openminers.BasePromptingMiner):
         if self.config.vicuna.device != "cpu":
             self.model = self.model.to(self.config.vicuna.device)
 
-    def _process_history(self, history: List[str]) -> str:
+    def _process_history(self, roles: List[str], messages: List[str]) -> str:
         processed_history = ""
         if self.config.vicuna.do_prompt_injection:
             processed_history += self.config.vicuna.system_prompt
-        for message in history:
-            if message["role"] == "system":
-                if not self.config.vicuna.do_prompt_injection or message != history[0]:
+        for role, message in  zip(roles, messages):
+            if role == "system":
+                if not self.config.vicuna.do_prompt_injection or message != message[0]:
                     processed_history += "" + message["content"].strip() + " "
-            if message["role"] == "Assistant":
+            if role == "Assistant":
                 processed_history += "ASSISTANT:" + message["content"].strip() + "</s>"
-            if message["role"] == "user":
+            if role == "user":
                 processed_history += "USER: " + message["content"].strip() + " "
         return processed_history
 
-    def forward(self, messages: List[Dict[str, str]]) -> str:
-        history = self._process_history(messages)
+    def prompt(self, synapse: Prompting) -> Prompting:
+        history = self._process_history(roles=synapse.roles, messages=synapse.messages)
         prompt = history + "ASSISTANT:"
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(
             self.config.vicuna.device
@@ -112,14 +121,15 @@ class VicunaMiner(openminers.BasePromptingMiner):
             pad_token_id=self.tokenizer.eos_token_id,
         )
 
-        generation = self.tokenizer.decode(
+        completion = self.tokenizer.decode(
             output[0][input_ids.shape[1] :], skip_special_tokens=True
         )
 
         # Logging input and generation if debugging is active
-        bt.logging.debug("Message: " + str(messages))
-        bt.logging.debug("Generation: " + str(generation))
-        return generation
+        bt.logging.debug("Message: " + str(synapse.messages))
+        bt.logging.debug("Generation: " + str(completion))
+        synapse.completion = completion
+        return synapse
 
 
 if __name__ == "__main__":
