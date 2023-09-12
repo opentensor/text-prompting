@@ -32,7 +32,7 @@ class VicunaMiner(Miner):
     def config(self) -> "bt.Config":
         parser = argparse.ArgumentParser(description="Vicuna Miner Configs")
         self.add_args(parser)
-        return btconfig(parser)
+        return bt.config(parser)
 
     @classmethod
     def add_args(cls, parser: argparse.ArgumentParser):
@@ -99,11 +99,11 @@ class VicunaMiner(Miner):
         for role, message in  zip(roles, messages):
             if role == "system":
                 if not self.config.vicuna.do_prompt_injection or message != message[0]:
-                    processed_history += "" + message["content"].strip() + " "
+                    processed_history += "" + message.strip() + " "
             if role == "Assistant":
-                processed_history += "ASSISTANT:" + message["content"].strip() + "</s>"
+                processed_history += "ASSISTANT:" + message.strip() + "</s>"
             if role == "user":
-                processed_history += "USER: " + message["content"].strip() + " "
+                processed_history += "USER: " + message.strip() + " "
         return processed_history
 
     def prompt(self, synapse: Prompting) -> Prompting:
