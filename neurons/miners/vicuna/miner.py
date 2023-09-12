@@ -18,7 +18,6 @@
 import time
 import torch
 import argparse
-import openminers
 import bittensor as bt
 
 from typing import List, Dict
