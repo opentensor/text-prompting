@@ -153,7 +153,7 @@ class CerebrasBTLMMiner(Miner):
             processed_history += self.config.btlm.system_prompt
         for role, message in zip(roles, messages):
             if role == "system":
-                if not self.config.btlm.do_prompt_injection or message != history[0]:
+                if not self.config.btlm.do_prompt_injection or message != messages[0]:
                     processed_history += "system: " + message + "\n"
             if role == "assistant":
                 processed_history += "assistant: " + message + "\n"
