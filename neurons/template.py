@@ -19,7 +19,7 @@
 
 # Bittensor Miner Template:# Step 1: Import necessary libraries and modules
 
-from miners.revolution_miner import Miner
+from prompting.baseminer.miner import Miner
 from prompting.protocol import Prompting
 import bittensor as bt
 

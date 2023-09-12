@@ -32,7 +32,7 @@ from transformers import (
     pipeline,
 )
 
-from baseminer.revolution_miner import Miner
+from prompting.baseminer.miner import Miner
 from prompting.protocol import Prompting
 
 
