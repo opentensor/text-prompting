@@ -27,8 +27,8 @@ from prompting.validators.reward import DefaultRewardFrameworkConfig
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
     bt.logging.check_config(config)
-    #bt.wallet.check_config(config)
-    #bt.subtensor.check_config(config)
+    # bt.wallet.check_config(config)
+    # bt.subtensor.check_config(config)
 
     if config.mock:
         config.neuron.mock_reward_models = True
@@ -66,7 +66,9 @@ def check_config(cls, config: "bt.Config"):
 
 def add_args(cls, parser):
     # Netuid Arg
-    parser.add_argument("--netuid", type=int, help="Prompting network netuid", default=1)
+    parser.add_argument(
+        "--netuid", type=int, help="Prompting network netuid", default=1
+    )
 
     parser.add_argument(
         "--neuron.name",
@@ -119,7 +121,9 @@ def add_args(cls, parser):
         default=50,
     )
 
-    parser.add_argument("--neuron.answer_timeout", type=float, help="Answer query timeout.", default=10)
+    parser.add_argument(
+        "--neuron.answer_timeout", type=float, help="Answer query timeout.", default=10
+    )
     parser.add_argument(
         "--neuron.answer_sample_size",
         type=int,
@@ -175,7 +179,9 @@ def add_args(cls, parser):
         default=True,
     )
 
-    parser.add_argument("--wandb.off", action="store_true", help="Turn off wandb.", default=False)
+    parser.add_argument(
+        "--wandb.off", action="store_true", help="Turn off wandb.", default=False
+    )
     parser.add_argument(
         "--wandb.project_name",
         type=str,
@@ -220,7 +226,9 @@ def add_args(cls, parser):
     )
 
     # Mocks
-    parser.add_argument("--mock", action="store_true", help="Mock all items.", default=False)
+    parser.add_argument(
+        "--mock", action="store_true", help="Mock all items.", default=False
+    )
     parser.add_argument(
         "--neuron.mock_reward_models",
         action="store_true",
@@ -256,7 +264,7 @@ def add_args(cls, parser):
         action="store_true",
         help="Dont apply the task validator reward model",
         default=False,
-    )    
+    )
 
     parser.add_argument(
         "--reward.reciprocate_weight",

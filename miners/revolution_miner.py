@@ -35,6 +35,7 @@ from miners.run import run
 from miners.set_weights import set_weights
 from miners.config import check_config, get_config
 
+
 class Miner(ABC):
     """
     The Miner class is an abstract base class that defines the structure for Bittensor miners.
@@ -144,11 +145,10 @@ class Miner(ABC):
         Returns:
             blacklisted (:obj:`bool`):
         """
-        def _blacklist(
-            synapse: "Prompting"
-        ) -> Union[Tuple[bool, str], bool]:
+
+        def _blacklist(synapse: "Prompting") -> Union[Tuple[bool, str], bool]:
             raise NotImplementedError("blacklist not implemented in subclass")
-    
+
         return blacklist(self, _blacklist, synapse)
 
     def priority(self, synapse: Prompting) -> float:
@@ -169,13 +169,10 @@ class Miner(ABC):
             priority (:obj:`float`):
         """
 
-        def _priority(
-            synapse: "Prompting"
-        ) -> Union[Tuple[bool, str], bool]:
+        def _priority(synapse: "Prompting") -> Union[Tuple[bool, str], bool]:
             raise NotImplementedError("priority not implemented in subclass")
-    
-        return priority(self, _priority, synapse)
 
+        return priority(self, _priority, synapse)
 
     def run(self):
         """

@@ -1,4 +1,3 @@
-
 # The MIT License (MIT)
 # Copyright © 2021 Yuma Rao
 
@@ -20,7 +19,7 @@ import torch
 from typing import List
 from .config import RewardModelType
 from .reward import BaseRewardModel
-from transformers import  AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModel
 from torchmetrics.functional import pairwise_cosine_similarity
 import torch.nn.functional as F
 
@@ -46,31 +45,36 @@ def mean_pooling(model_output, attention_mask):
         input_mask_expanded.sum(1), min=1e-9
     )
 
-class RelevanceRewardModel( BaseRewardModel ):
 
+class RelevanceRewardModel(BaseRewardModel):
     @property
-    def name(self) -> str: return RewardModelType.relevance.value
-   
-    def __init__( self, device: str ):
+    def name(self) -> str:
+        return RewardModelType.relevance.value
+
+    def __init__(self, device: str):
         super().__init__()
         self.device = device
         self.models = [
             BertRelevanceRewardModel(self.device),
-            MpnetRelevenceModel(self.device)
+            MpnetRelevenceModel(self.device),
         ]
         self.bounds = [-0.0246, 0.3]
 
-    def get_rewards( self, prompt: str, completions: List[str], name: str ) -> torch.FloatTensor:
-        return torch.tensor( [self.reward( prompt, completion, name ) for completion in completions], dtype=torch.float32).to(self.device)
-    
-    def normalize_rewards( self, rewards: torch.FloatTensor ) -> torch.FloatTensor:
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> torch.FloatTensor:
+        return torch.tensor(
+            [self.reward(prompt, completion, name) for completion in completions],
+            dtype=torch.float32,
+        ).to(self.device)
+
+    def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards
-    
+
     def reward(self, prompt: str, completion: str, name: str) -> float:
         for i, model in enumerate(self.models):
-
             # rewards
-            diff = model.reward(prompt,completion)
+            diff = model.reward(prompt, completion)
 
             # If a model returns 0, stop iterating and return 0
             if diff < self.bounds[i]:
@@ -78,15 +82,19 @@ class RelevanceRewardModel( BaseRewardModel ):
         # If none of the models returned 0, return 1
         return 1.0
 
-class BertRelevanceRewardModel( BaseRewardModel ):
 
+class BertRelevanceRewardModel(BaseRewardModel):
     relevance_model_path = "bert-base-uncased"
-   
-    def __init__( self, device: str ):
+
+    def __init__(self, device: str):
         super().__init__()
         self.device = device
-        self.tokenizer = AutoTokenizer.from_pretrained(BertRelevanceRewardModel.relevance_model_path)
-        self.model = AutoModel.from_pretrained(BertRelevanceRewardModel.relevance_model_path).to(self.device)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            BertRelevanceRewardModel.relevance_model_path
+        )
+        self.model = AutoModel.from_pretrained(
+            BertRelevanceRewardModel.relevance_model_path
+        ).to(self.device)
 
     def get_embedding(self, message: str) -> "torch.FloatTensor":
         """Runs a forward pass through the model.
@@ -112,33 +120,39 @@ class BertRelevanceRewardModel( BaseRewardModel ):
             embeddings = self.model(**encoded_input)
 
         sentence_embeddings = mean_pooling(embeddings, encoded_input["attention_mask"])
-        sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
+        sentence_embeddings = torch.nn.functional.normalize(
+            sentence_embeddings, p=2, dim=1
+        )
         batch_representation = torch.mean(sentence_embeddings, dim=0)
         return batch_representation
-    
-    def reward( self, prompt: str, completion:str ) -> float:
+
+    def reward(self, prompt: str, completion: str) -> float:
         # Get the two bert embeddings.
-        completion_embedding = self.get_embedding( completion)
-        prompt_embedding = self.get_embedding( prompt)
+        completion_embedding = self.get_embedding(completion)
+        prompt_embedding = self.get_embedding(prompt)
 
         # Calculate the RMSE distance for the 2 embeddings.
-        diff = (( completion_embedding - prompt_embedding )**2).mean()**0.5
+        diff = ((completion_embedding - prompt_embedding) ** 2).mean() ** 0.5
 
         # Return relevance scoring.
         return float(-diff)
 
-class MpnetRelevenceModel( BaseRewardModel ):
-    
+
+class MpnetRelevenceModel(BaseRewardModel):
     diversity_model_path = "sentence-transformers/all-mpnet-base-v2"
 
-    def __init__( self, device: str ):
+    def __init__(self, device: str):
         super().__init__()
         self.device = device
-        self.tokenizer = AutoTokenizer.from_pretrained( MpnetRelevenceModel.diversity_model_path )
-        self.model = AutoModel.from_pretrained( MpnetRelevenceModel.diversity_model_path ).to(self.device)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            MpnetRelevenceModel.diversity_model_path
+        )
+        self.model = AutoModel.from_pretrained(
+            MpnetRelevenceModel.diversity_model_path
+        ).to(self.device)
         self.reward_quantile = torch.tensor(0.1).to(self.device)
-        
-    def get_embeddings( self, sentences: List[str] ) -> "torch.FloatTensor":
+
+    def get_embeddings(self, sentences: List[str]) -> "torch.FloatTensor":
         """Runs a forward pass through the model.
         Args:
             sentences (:obj:`List[str]`):
@@ -162,18 +176,17 @@ class MpnetRelevenceModel( BaseRewardModel ):
 
         # Pooling
         sentence_embeddings = mean_pooling(embeddings, encoded_input["attention_mask"])
-        
+
         # Normalizing
         sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
         return sentence_embeddings
 
-    def reward( self, prompt: str, completion: str ) -> torch.FloatTensor:
-        
+    def reward(self, prompt: str, completion: str) -> torch.FloatTensor:
         # Get embeddings for all completions.
-        embeddings = self.get_embeddings( completion )
-        prompt_embed = self.get_embeddings( prompt )
+        embeddings = self.get_embeddings(completion)
+        prompt_embed = self.get_embeddings(prompt)
 
         # Calculate the pairwise cosine similarity.
-        similarity = pairwise_cosine_similarity( prompt_embed, embeddings )
+        similarity = pairwise_cosine_similarity(prompt_embed, embeddings)
 
         return torch.abs(similarity)

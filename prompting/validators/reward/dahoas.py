@@ -22,44 +22,47 @@ from .config import RewardModelType
 from .reward import BaseRewardModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 
-class DahoasRewardModel( BaseRewardModel ):
 
+class DahoasRewardModel(BaseRewardModel):
     model_name = "EleutherAI/gpt-j-6b"
 
     @property
-    def name(self) -> str: return RewardModelType.dahoas.value
+    def name(self) -> str:
+        return RewardModelType.dahoas.value
 
     @staticmethod
-    def load_weights( path: str ):
-        if not os.path.exists( path + "/hf_ckpt.pt"):
-            os.makedirs( path, exist_ok=True)
+    def load_weights(path: str):
+        if not os.path.exists(path + "/hf_ckpt.pt"):
+            os.makedirs(path, exist_ok=True)
             os.system(
                 f"wget -O { path + '/hf_ckpt.pt'} \
                 https://huggingface.co/Dahoas/gptj-rm-static/resolve/main/hf_ckpt.pt"
             )
 
-    def __init__(self, path: str, device: str ):
+    def __init__(self, path: str, device: str):
         super().__init__()
-        DahoasRewardModel.load_weights( path = path )
+        DahoasRewardModel.load_weights(path=path)
         self.device = torch.device(device)
-        config = AutoConfig.from_pretrained( DahoasRewardModel.model_name )
-        self.model = AutoModelForCausalLM.from_config( config ).to(self.device)
+        config = AutoConfig.from_pretrained(DahoasRewardModel.model_name)
+        self.model = AutoModelForCausalLM.from_config(config).to(self.device)
         self.config = self.model.config
 
         # `gpt-neo(x)` models use `hidden_size` attribute names instead of `n_embd``
         if config is None:
             config = DahoasRewardModel.config()
 
-        self.config.n_embd = self.config.hidden_size if hasattr(self.config, "hidden_size") else self.config.n_embd
+        self.config.n_embd = (
+            self.config.hidden_size
+            if hasattr(self.config, "hidden_size")
+            else self.config.n_embd
+        )
         self.transformer = self.model.transformer
         self.v_head = torch.nn.Linear(self.config.n_embd, 1, bias=False).to(self.device)
         self.tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6b")
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.PAD_ID = self.tokenizer(self.tokenizer.pad_token)["input_ids"][0]
 
-
-    def reward( self, prompt: str, completion: str, name: str ) -> float:
-
+    def reward(self, prompt: str, completion: str, name: str) -> float:
         def reward_fn(samples):
             if samples is None:
                 return 0
@@ -67,7 +70,10 @@ class DahoasRewardModel( BaseRewardModel ):
             batch_size = 1
             for i in range(0, len(samples), batch_size):
                 sub_samples = samples[i : i + batch_size]
-                sub_samples = ["<|startoftext|>" + chosen + "<|endoftext|>" for chosen in sub_samples]
+                sub_samples = [
+                    "<|startoftext|>" + chosen + "<|endoftext|>"
+                    for chosen in sub_samples
+                ]
                 encodings_dict = self.tokenizer(
                     sub_samples,
                     truncation=False,
@@ -81,20 +87,25 @@ class DahoasRewardModel( BaseRewardModel ):
                 attn_masks = attn_masks.repeat(2, 1)
                 with torch.no_grad():
                     sub_scores = self.forward(
-                        input_ids = input_ids.to(self.device),
-                        attention_mask = attn_masks.to(self.device),
+                        input_ids=input_ids.to(self.device),
+                        attention_mask=attn_masks.to(self.device),
                     )
                 scores_list.append(sub_scores["chosen_end_scores"])
             scores = torch.cat(scores_list, dim=0).mean().item()
             return scores
 
         with torch.no_grad():
-            combined_reward = reward_fn( prompt + completion )
-            independent_reward = reward_fn( completion )
-            return float( (combined_reward - independent_reward).item() )
-        
-    def get_rewards( self, prompt: str, completions: List[str], name: str ) -> torch.FloatTensor:
-        return torch.tensor( [self.reward( prompt, completion, name ) for completion in completions], dtype=torch.float32).to(self.device)
+            combined_reward = reward_fn(prompt + completion)
+            independent_reward = reward_fn(completion)
+            return float((combined_reward - independent_reward).item())
+
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> torch.FloatTensor:
+        return torch.tensor(
+            [self.reward(prompt, completion, name) for completion in completions],
+            dtype=torch.float32,
+        ).to(self.device)
 
     def forward(
         self,
@@ -114,7 +125,7 @@ class DahoasRewardModel( BaseRewardModel ):
         loss = None
         transformer_outputs = self.transformer(
             input_ids.to(self.device),
-            attention_mask = attention_mask.to(self.device),
+            attention_mask=attention_mask.to(self.device),
         )
 
         hidden_states = transformer_outputs[0]
@@ -161,7 +172,9 @@ class DahoasRewardModel( BaseRewardModel ):
             rejected_end_scores.append(r_truncated_reward[-1])
 
             # Compute loss based on truncated rewards (ignore padding)
-            loss += -torch.log(torch.sigmoid(c_truncated_reward - r_truncated_reward)).mean()
+            loss += -torch.log(
+                torch.sigmoid(c_truncated_reward - r_truncated_reward)
+            ).mean()
         loss = loss / bs
 
         if not inference:

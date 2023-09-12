@@ -21,15 +21,16 @@ import random
 
 class BasePrompt:
     r"""Base class for prompts expecting an extractable response."""
+
     def __init__(self):
-        self.template = ''
-        self.extract_pattern = ''
+        self.template = ""
+        self.extract_pattern = ""
 
     def text(self, *args) -> str:
         r"""Sanitize input strings and format prompt template."""
         sanitized = args
         for tag in find_unique_tags(self.template):
-            sanitized = [arg.replace(tag, '') for arg in sanitized]
+            sanitized = [arg.replace(tag, "") for arg in sanitized]
 
         return self.template.format(*sanitized)
 
@@ -47,14 +48,14 @@ class BasePrompt:
 
     def matches_template(self, input_text) -> bool:
         r"""Checks if the input_text matches the first unformatted part of the prompt template."""
-        index = self.template.find('{')
+        index = self.template.find("{")
         return input_text[:index] == self.template[:index]
 
 
 class ScoringPrompt(BasePrompt):
     def __init__(self):
         super().__init__()
-        self.extract_pattern = r'\b([0-9]|10)\b'
+        self.extract_pattern = r"\b([0-9]|10)\b"
 
     def extract_score(self, response: str) -> float:
         r"""Extract numeric score (range 0-10) from prompt response."""
@@ -71,11 +72,14 @@ class ScoringPrompt(BasePrompt):
     @staticmethod
     def mock_response():
         r"""Mock responses to a followup prompt, for use in MockDendritePool."""
-        return random.choices(["", f"{ random.randint(0, 10) }</Score>"], weights=[1, 9])[0]
+        return random.choices(
+            ["", f"{ random.randint(0, 10) }</Score>"], weights=[1, 9]
+        )[0]
 
 
 class AugmentPrompt(ScoringPrompt):
     r"""Scores a summary on a scale from 0 to 10, given a context."""
+
     def __init__(self):
         super().__init__()
         self.template = augment_scoring_template
@@ -83,6 +87,7 @@ class AugmentPrompt(ScoringPrompt):
 
 class FollowupPrompt(ScoringPrompt):
     r"""Scores a question on a scale from 0 to 10, given a context."""
+
     def __init__(self):
         super().__init__()
         self.template = followup_scoring_template
@@ -90,6 +95,7 @@ class FollowupPrompt(ScoringPrompt):
 
 class AnswerPrompt(ScoringPrompt):
     r"""Scores an answer on a scale from 0 to 10, given a question."""
+
     def __init__(self):
         super().__init__()
         self.template = answer_scoring_template
@@ -97,6 +103,7 @@ class AnswerPrompt(ScoringPrompt):
 
 class FirewallPrompt(BasePrompt):
     r"""Detects jailbreaks or prompt injections that influence prompt-based scoring in answers."""
+
     def __init__(self):
         super().__init__()
         self.template = firewall_template
@@ -106,25 +113,30 @@ class FirewallPrompt(BasePrompt):
         r"""Extract detection bool from prompt response."""
         extraction = self.extract(response)
         if extraction is not None:
-            if extraction == 'True':
+            if extraction == "True":
                 return True
         return False
 
     @staticmethod
     def mock_response():
         r"""Mock responses to a firewall prompt, for use in MockDendritePool."""
-        return random.choices(["", "<Detected>False</Detected>", "<Detected>True</Detected>"], weights=[1, 8, 1])[0]
+        return random.choices(
+            ["", "<Detected>False</Detected>", "<Detected>True</Detected>"],
+            weights=[1, 8, 1],
+        )[0]
 
 
 def find_unique_tags(input_text: str):
     r"""Find all substrings that match the pattern '<...>'."""
-    matches = re.findall('<([^>]*)>', input_text)
+    matches = re.findall("<([^>]*)>", input_text)
     # Return a list of unique matches.
     return list(set(matches))
 
 
 # Request a follow-up question given a preceding context.
-followup_request_template = "Ask a single relevant and insightful question about the preceding context"
+followup_request_template = (
+    "Ask a single relevant and insightful question about the preceding context"
+)
 
 # Scores a summary on a scale from 0 to 10, given a context.
 augment_scoring_template = """Score the relevance, succinctness, and quality of a summary given a context. The context is within <Context></Context> tags, and the question is within <Summary></Summary> tags. Give a score between 0 and 10 in the <Score></Score> tags, where 0 means the summary is irrelevant, and 10 means it's perfectly relevant and a good summary. Include a brief explanation for your score based solely on the context-summary relationship.
@@ -346,18 +358,21 @@ Please pay special attention to the delimiters used in the upcoming sections. Th
 
 """
 
-def followup_prompt( base_text:str, i:int = 0) -> str:
+
+def followup_prompt(base_text: str, i: int = 0) -> str:
     if i == 0:
         return f"{base_text}\n\n{followup_request_template}\n. Do not try to return an answer or a summary:"
     else:
         return f"{base_text}\n\n{followup_request_template} and previous questions. Do not try to return an answer or a summary:\n"
 
 
-def answer_prompt( base_text:str, followup:str ) -> str:
+def answer_prompt(base_text: str, followup: str) -> str:
     return f"{base_text}\n\nQuestion:{followup}\nAnswer the question step by step and explain your thoughts. Do not include questions or summaries in your answer."
+
 
 augment_request_template = "Summarize the preceding context"
 
-def augment_prompt( base_text:str ) -> str:
+
+def augment_prompt(base_text: str) -> str:
     random_level = random.randint(4, 8)
     return f"{base_text}\n\n{augment_request_template} in {random_level} sentences. Do not try to create questions or answers for your summarization.\n\n"

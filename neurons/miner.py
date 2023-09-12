@@ -23,11 +23,13 @@ from miners.revolution_miner import Miner
 from prompting.protocol import Prompting
 import bittensor as bt
 
+
 class TemplateMiner(Miner):
     def prompt(self, synapse: Prompting) -> Prompting:
         bt.logging.debug("In prompt!")
         synapse.completion = "I am a chatbot"
         return synapse
+
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":

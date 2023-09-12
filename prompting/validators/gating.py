@@ -136,14 +136,18 @@ class GatingModel(BaseGatingModel):
             config = GatingModel.config()
         if model_name is not None:
             config.gating.model_name = model_name
-        config.gating.num_uids = num_uids if num_uids is not None else config.gating.num_uids
+        config.gating.num_uids = (
+            num_uids if num_uids is not None else config.gating.num_uids
+        )
         self.config = config
         self.num_uids = config.gating.num_uids
         self.device = torch.device(self.config.neuron.device)
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.gating.model_name)
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.model = AutoModel.from_pretrained(self.config.gating.model_name)
-        self.linear = torch.nn.Linear(self.model.config.hidden_size, config.gating.num_uids)
+        self.linear = torch.nn.Linear(
+            self.model.config.hidden_size, config.gating.num_uids
+        )
         self.optimizer = torch.optim.SGD(
             [{"params": self.linear.parameters()}],
             lr=self.config.gating.learning_rate,
@@ -160,7 +164,9 @@ class GatingModel(BaseGatingModel):
         """
         normalized_scores = torch.nn.functional.softmax(scores, dim=0).to(self.device)
         normalized_rewards = torch.nn.functional.softmax(rewards, dim=0).to(self.device)
-        loss = torch.nn.functional.mse_loss(normalized_scores, normalized_rewards.detach())
+        loss = torch.nn.functional.mse_loss(
+            normalized_scores, normalized_rewards.detach()
+        )
         loss.backward()
         self.optimizer.step()
         return loss
@@ -184,7 +190,7 @@ class GatingModel(BaseGatingModel):
 
         # Pop the overflow mapping from the input to maintain the expected { input_ids, mask } format of the model
         _ = encoded_input.pop("overflow_to_sample_mapping")
-        
+
         with torch.no_grad():
             hidden_states = self.model(**encoded_input).last_hidden_state[0, -1, :]
         return self.linear(hidden_states)
@@ -227,13 +233,17 @@ class SentenceEmbedGatingModel(BaseGatingModel):
             config = SentenceEmbedGatingModel.config()
         if model_name is not None:
             config.gating.model_name = model_name
-        config.gating.num_uids = num_uids if num_uids is not None else config.gating.num_uids
+        config.gating.num_uids = (
+            num_uids if num_uids is not None else config.gating.num_uids
+        )
         self.config = config
         self.num_uids = config.gating.num_uids
         self.device = torch.device(self.config.neuron.device)
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.gating.model_name)
         self.transformer = AutoModel.from_pretrained(self.config.gating.model_name)
-        self.linear = torch.nn.Linear(self.transformer.config.hidden_size, config.gating.num_uids)
+        self.linear = torch.nn.Linear(
+            self.transformer.config.hidden_size, config.gating.num_uids
+        )
         self.optimizer = torch.optim.SGD(
             [{"params": self.linear.parameters()}],
             lr=self.config.gating.learning_rate,
@@ -254,8 +264,12 @@ class SentenceEmbedGatingModel(BaseGatingModel):
               and dividing it by the sum of input_mask_expanded after clamping its values to a minimum of 1e-9.
         """
         token_embeddings = model_output[0]
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+        input_mask_expanded = (
+            attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        )
+        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(
+            input_mask_expanded.sum(1), min=1e-9
+        )
 
     def forward(self, message: str) -> "torch.FloatTensor":
         """Runs a forward pass through the model.
@@ -280,8 +294,12 @@ class SentenceEmbedGatingModel(BaseGatingModel):
         with torch.no_grad():
             embeddings = self.transformer(**encoded_input)
 
-        sentence_embeddings = self.mean_pooling(embeddings, encoded_input["attention_mask"])
-        sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
+        sentence_embeddings = self.mean_pooling(
+            embeddings, encoded_input["attention_mask"]
+        )
+        sentence_embeddings = torch.nn.functional.normalize(
+            sentence_embeddings, p=2, dim=1
+        )
         batch_representation = torch.mean(sentence_embeddings, dim=0)
 
         scores = self.linear(batch_representation)
@@ -298,7 +316,9 @@ class SentenceEmbedGatingModel(BaseGatingModel):
         """
         normalized_scores = torch.nn.functional.softmax(scores, dim=0).to(self.device)
         normalized_rewards = torch.nn.functional.softmax(rewards, dim=0).to(self.device)
-        loss = torch.nn.functional.mse_loss(normalized_scores, normalized_rewards.detach())
+        loss = torch.nn.functional.mse_loss(
+            normalized_scores, normalized_rewards.detach()
+        )
         loss.backward()
         self.optimizer.step()
         return loss
