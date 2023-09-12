@@ -30,7 +30,7 @@ from prompting.protocol import Prompting
 class VicunaMiner(Miner):
     
     def config(self) -> "bt.Config":
-        parser = argparse.ArgumentParser(description="OpenAI Miner Configs")
+        parser = argparse.ArgumentParser(description="Vicuna Miner Configs")
         self.add_args(parser)
         return bt.config(parser)
 
@@ -38,8 +38,8 @@ class VicunaMiner(Miner):
     def add_args(cls, parser: argparse.ArgumentParser):
         parser.add_argument(
             "--vicuna.model_name",
+            default="TheBloke/Wizard-Vicuna-7B-Uncensored-HF",
             type=str,
-            # required=True,
             help="Name/path of model to load",
         )
         parser.add_argument(
