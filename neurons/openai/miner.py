@@ -28,6 +28,22 @@ from prompting.protocol import Prompting
 class OpenAIMiner(Miner):
     @classmethod
     def add_args(cls, parser: argparse.ArgumentParser):
+        """
+        Adds OpenAI-specific arguments to the command line parser.
+
+        This class method introduces command-line arguments that pertain specifically to the 
+        OpenAI GPT model's completion settings, such as temperature, max tokens, and model name. 
+        Developers extending or utilizing this method can easily customize the miner's operation 
+        by providing these arguments when starting the miner.
+
+        Args:
+            parser (argparse.ArgumentParser): 
+                The command line argument parser to which the OpenAI-specific arguments should be added.
+
+        Note:
+            Consider adding or adjusting arguments here if introducing new features or parameters 
+            related to OpenAI's model completion.
+        """
         parser.add_argument(
             "--openai.suffix",
             type=str,
@@ -78,6 +94,23 @@ class OpenAIMiner(Miner):
         )
 
     def config(self) -> "bittensor.Config":
+        """
+        Provides the configuration for the OpenAIMiner.
+
+        This method returns a configuration object specific to the OpenAIMiner, containing settings 
+        and parameters related to the OpenAI model and its interaction parameters. The configuration 
+        ensures the miner's optimal operation with the OpenAI model and can be customized by adjusting 
+        the command-line arguments introduced in the `add_args` method.
+
+        Returns:
+            bittensor.Config: 
+                A configuration object specific to the OpenAIMiner, detailing the OpenAI model settings 
+                and operational parameters.
+
+        Note:
+            If introducing new settings or parameters for OpenAI or the miner's operation, ensure they 
+            are properly initialized and returned in this configuration method.
+        """
         parser = argparse.ArgumentParser(description="OpenAI Miner Configs")
         self.add_args(parser)
         return bittensor.config(parser)
@@ -93,6 +126,34 @@ class OpenAIMiner(Miner):
         openai.api_key = api_key
 
     def prompt(self, synapse: Prompting) -> Prompting:
+        """
+        Overrides the Miner's abstract `prompt` method to process incoming requests using OpenAI.
+
+        This method makes use of the OpenAI GPT model to generate completions for the incoming requests. 
+        When implementing or extending this method, developers should ensure that the `synapse` object 
+        contains both `roles` and `messages` fields. The `roles` field describes the type of each message 
+        (e.g., system, user), while the `messages` field contains the actual content of each message.
+
+        Args:
+            synapse (Prompting): 
+                The incoming request object. Must contain:
+                    - `roles`: List of roles for each message, e.g., ["system", "user"]. 
+                      Describes the origin or type of each message.
+                    - `messages`: List of actual message content corresponding to each role.
+                The combination of roles and messages forms a conversation context for the model.
+        
+        Returns:
+            Prompting: 
+                The response object containing the model's generated completion. This is essentially 
+                the filled synapse request object with an added `completion` field which contains the 
+                model's response.
+        
+        Note:
+            Developers extending this method should ensure proper handling of both `roles` and `messages` 
+            from the `synapse` object to maintain the conversation context. Additionally, consider adjusting 
+            OpenAI-specific parameters (e.g., temperature, max_tokens) in the config to tailor the response 
+            generation process.
+        """
         messages = [
             {"role": role, "content": message}
             for role, message in zip(synapse.roles, synapse.messages)
@@ -114,6 +175,20 @@ class OpenAIMiner(Miner):
 
 
 if __name__ == "__main__":
+    """
+    Main execution point for the OpenAIMiner.
+
+    This script initializes and runs the OpenAIMiner, which connects to the Bittensor network 
+    and uses the OpenAI model for processing incoming requests. The miner continuously listens 
+    for these requests, generating responses using the OpenAI GPT model's completion capabilities.
+
+    Before running, ensure that the `OPENAI_API_KEY` environment variable is set with a valid 
+    OpenAI API key to authorize the model's completions.
+
+    Note:
+        When executing the script, the miner runs indefinitely, periodically logging its status. 
+        To stop the miner, use a keyboard interrupt or ensure proper termination of the script.
+    """
     openai_api_key = os.getenv("OPENAI_API_KEY")
 
     with OpenAIMiner(api_key=openai_api_key):
