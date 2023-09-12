@@ -29,30 +29,34 @@ class PromptRewardModel(BaseRewardModel):
     reward_model_name: str = "VMware/open-llama-7b-open-instruct"
 
     @property
-    def name(self) -> str: return RewardModelType.prompt.value
+    def name(self) -> str:
+        return RewardModelType.prompt.value
 
-    def __init__(self, device: str ):
+    def __init__(self, device: str):
         super().__init__()
         self.device = device
 
         # https://huggingface.co/VMware/open-llama-7b-open-instruct
         # Fast tokenizer results in incorrect encoding, set the use_fast = False parameter.
-        self.tokenizer = AutoTokenizer.from_pretrained(PromptRewardModel.reward_model_name, use_fast=False)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            PromptRewardModel.reward_model_name, use_fast=False
+        )
         # Generative default expects most recent token on right-hand side with padding on left.
         # https://github.com/huggingface/transformers/pull/10552
         self.tokenizer.padding_side = "left"
 
-        self.model = AutoModelForCausalLM.from_pretrained(PromptRewardModel.reward_model_name,
-                                                          torch_dtype=torch.float16).to(self.device)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            PromptRewardModel.reward_model_name, torch_dtype=torch.float16
+        ).to(self.device)
 
     def reward(self, prompt: str, completion: str, name: str) -> float:
         with torch.no_grad():
             # Choose correct scoring prompt for request type.
-            if name == 'augment':
+            if name == "augment":
                 scoring_prompt = AugmentPrompt()
-            elif name == 'followup':
+            elif name == "followup":
                 scoring_prompt = FollowupPrompt()
-            elif name == 'answer':
+            elif name == "answer":
                 scoring_prompt = AnswerPrompt()
             else:
                 return 0
@@ -72,23 +76,37 @@ class PromptRewardModel(BaseRewardModel):
 
             # Prompt local reward model.
             start_time = time.time()
-            generated_tokens = self.model.generate(input_ids, max_new_tokens=2, max_time=1)
+            generated_tokens = self.model.generate(
+                input_ids, max_new_tokens=2, max_time=1
+            )
             duration = time.time() - start_time
-            generated_text = self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
+            generated_text = self.tokenizer.batch_decode(
+                generated_tokens, skip_special_tokens=True
+            )
 
             # Extract score from generated text.
-            score_text = generated_text[0][len(scoring_prompt_text):]
+            score_text = generated_text[0][len(scoring_prompt_text) :]
             score = scoring_prompt.extract_score(score_text)
-            bt.logging.trace(f"PromptRewardModel | {name} score: {score} | {repr(score_text)} | "
-                             f"{duration:.2f}s | {repr(completion[:70])}")
+            bt.logging.trace(
+                f"PromptRewardModel | {name} score: {score} | {repr(score_text)} | "
+                f"{duration:.2f}s | {repr(completion[:70])}"
+            )
 
             # Scale 0-10 score to 0-1 range.
-            score /= 10.
+            score /= 10.0
 
             return score
-        
-    def get_rewards( self, prompt: str, completions: List[str], name: str ) -> torch.FloatTensor:
-        bt.logging.debug(f"PromptRewardModel | Calculating {len(completions)} rewards (typically < 1 sec/reward).")
-        bt.logging.trace(f"PromptRewardModel | prompt: {repr(prompt[:50])} ... {repr(prompt[-50:])}")
-        return torch.tensor( [self.reward( prompt, completion, name ) for completion in completions], dtype=torch.float32).to(self.device)
-        
+
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> torch.FloatTensor:
+        bt.logging.debug(
+            f"PromptRewardModel | Calculating {len(completions)} rewards (typically < 1 sec/reward)."
+        )
+        bt.logging.trace(
+            f"PromptRewardModel | prompt: {repr(prompt[:50])} ... {repr(prompt[-50:])}"
+        )
+        return torch.tensor(
+            [self.reward(prompt, completion, name) for completion in completions],
+            dtype=torch.float32,
+        ).to(self.device)

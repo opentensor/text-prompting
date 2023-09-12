@@ -158,6 +158,7 @@ class Miner(ABC):
         Returns:
             blacklisted (:obj:`bool`):
         """
+
         def _blacklist(synapse: "Prompting") -> Tuple[bool, str]:
             raise NotImplementedError("blacklist not implemented in subclass")
 
@@ -183,7 +184,7 @@ class Miner(ABC):
 
         def _priority(synapse: "Prompting") -> bool:
             raise NotImplementedError("priority not implemented in subclass")
-    
+
         return priority(self, _priority, synapse)
 
     def run(self):

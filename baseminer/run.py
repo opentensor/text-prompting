@@ -134,7 +134,7 @@ def run(self):
         self.axon.stop()
         bt.logging.success("Miner killed by keyboard interrupt.")
         exit()
-    
+
     # In case of unforeseen errors, the miner will log the error and continue operations.
     except Exception as e:
         bt.logging.error(traceback.format_exc())

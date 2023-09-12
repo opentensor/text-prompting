@@ -1,4 +1,3 @@
-
 # The MIT License (MIT)
 # Copyright © 2021 Yuma Rao
 
@@ -23,32 +22,38 @@ from .reward import BaseRewardModel
 
 blacklist = ["That is an excellent question."]
 
-class Blacklist( BaseRewardModel ):
 
+class Blacklist(BaseRewardModel):
     @property
-    def name(self) -> str: return RewardModelType.blacklist.value
+    def name(self) -> str:
+        return RewardModelType.blacklist.value
 
     def __init__(self):
         super().__init__()
         self.question_blacklist = []
         self.answer_blacklist = []
 
-    def reward( self, prompt: str, completion: str, name: str ) -> float:
-        if completion in blacklist: 
+    def reward(self, prompt: str, completion: str, name: str) -> float:
+        if completion in blacklist:
             return 0.0
-        
+
         if completion == prompt:
             return 0.0
-        
+
         if completion in self.question_blacklist or completion in self.answer_blacklist:
-            return 0.0 
-        
+            return 0.0
+
         return 1
 
-    def get_rewards( self, prompt: str, completions: List[str], name: str ) -> torch.FloatTensor:
-        return torch.tensor( [self.reward( prompt, completion, name ) for completion in completions], dtype=torch.float32)
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> torch.FloatTensor:
+        return torch.tensor(
+            [self.reward(prompt, completion, name) for completion in completions],
+            dtype=torch.float32,
+        )
 
-    def normalize_rewards( self, rewards: torch.FloatTensor ) -> torch.FloatTensor:
+    def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards
 
     def reset(self):

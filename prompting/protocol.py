@@ -37,4 +37,4 @@ class Prompting(bt.Synapse):
 
     roles: List[str] = pydantic.Field(..., allow_mutation=False)
     messages: List[str] = pydantic.Field(..., allow_mutation=False)
-    completion: str = ''
+    completion: str = ""

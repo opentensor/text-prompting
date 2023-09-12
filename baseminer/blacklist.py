@@ -51,9 +51,7 @@ def is_prompt_in_cache(self, synapse: Prompting) -> bool:
     return should_blacklist
 
 
-def default_blacklist(
-    self, synapse: Prompting
-) -> Union[Tuple[bool, str], bool]:
+def default_blacklist(self, synapse: Prompting) -> Union[Tuple[bool, str], bool]:
     # Check if the key is white listed.
     if synapse.dendrite.hotkey in self.config.miner.blacklist.whitelist:
         return False, "whitelisted hotkey"

@@ -35,6 +35,7 @@ from transformers import (
 from baseminer.revolution_miner import Miner
 from prompting.protocol import Prompting
 
+
 class StopOnTokens(StoppingCriteria):
     def __init__(self, stop_token_ids: List[int]):
         self.stop_token_ids = stop_token_ids
@@ -49,7 +50,6 @@ class StopOnTokens(StoppingCriteria):
 
 
 class CerebrasBTLMMiner(Miner):
-
     @classmethod
     def config(cls) -> "bt.Config":
         parser = argparse.ArgumentParser(description="Bittensor-LM Miner Config")
@@ -64,7 +64,7 @@ class CerebrasBTLMMiner(Miner):
         parser.add_argument(
             "--btlm.max_length",
             type=int,
-            default=50,
+            default=100,
             help="The maximum length (in tokens) of the generated text.",
         )
         parser.add_argument(
@@ -103,7 +103,6 @@ class CerebrasBTLMMiner(Miner):
 
     def __init__(self, *args, **kwargs):
         super(CerebrasBTLMMiner, self).__init__(*args, **kwargs)
-        print(self.config)
 
         bt.logging.info("Loading BTLM 3B model...")
         model = AutoModelForCausalLM.from_pretrained(
@@ -148,25 +147,25 @@ class CerebrasBTLMMiner(Miner):
                 replace_with_kernel_inject=False,
             )
 
-    def _process_history(self, history: List[Dict[str, str]]) -> str:
+    def _process_history(self, roles: List[str], messages: List[str]) -> str:
         processed_history = ""
         if self.config.btlm.do_prompt_injection:
             processed_history += self.config.btlm.system_prompt
-        for message in history:
-            if message["role"] == "system":
+        for role, message in zip(roles, messages):
+            if role == "system":
                 if not self.config.btlm.do_prompt_injection or message != history[0]:
-                    processed_history += "system: " + message["content"] + "\n"
-            if message["role"] == "assistant":
-                processed_history += "assistant: " + message["content"] + "\n"
-            if message["role"] == "user":
-                processed_history += "user: " + message["content"] + "\n"
+                    processed_history += "system: " + message + "\n"
+            if role == "assistant":
+                processed_history += "assistant: " + message + "\n"
+            if role == "user":
+                processed_history += "user: " + message + "\n"
         return processed_history
 
     def prompt(self, synapse: Prompting) -> Prompting:
-        history = self._process_history(messages)
+        history = self._process_history(roles=synapse.roles, messages=synapse.messages)
         history += "assistant: "
         bt.logging.debug("History: {}".format(history))
-        generation = (
+        completion = (
             self.pipe(
                 history,
                 temperature=self.config.btlm.temperature,
@@ -180,8 +179,9 @@ class CerebrasBTLMMiner(Miner):
             .split(":")[-1]
             .replace(str(history), "")
         )
-        bt.logging.debug("Generation: {}".format(generation))
-        return generation
+        bt.logging.debug("Completion: {}".format(completion))
+        synapse.completion = completion
+        return synapse
 
 
 if __name__ == "__main__":

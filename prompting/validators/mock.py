@@ -56,7 +56,6 @@ class MockRewardModel(torch.nn.Module):
 
 
 class MockDendriteResponse:
-
     class mock_status:
         status_code = 200
 
@@ -86,13 +85,7 @@ class MockDendriteResponse:
 
 
 class MockDendrite(torch.nn.Module):
-
-    async def query(
-        self,
-        synapse,
-        axons,
-        timeout
-    ):
+    async def query(self, synapse, axons, timeout):
         async def test():
             await asyncio.sleep(0.01)
             return [MockDendriteResponse(synapse.messages[0]) for _ in axons]
@@ -103,7 +96,12 @@ class MockDendrite(torch.nn.Module):
         pass
 
     async def async_backward(
-        self, uids: List[int], roles: List[str], messages: List[str], completions: List[str], rewards: List[float]
+        self,
+        uids: List[int],
+        roles: List[str],
+        messages: List[str],
+        completions: List[str],
+        rewards: List[float],
     ):
         async def query():
             await asyncio.sleep(0.01)

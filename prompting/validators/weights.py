@@ -29,7 +29,10 @@ def should_set_weights(self) -> bool:
     if self.config.neuron.disable_set_weights:
         return False
 
-    return ttl_get_block(self) % self.config.neuron.epoch_length < self.prev_block % self.config.neuron.epoch_length
+    return (
+        ttl_get_block(self) % self.config.neuron.epoch_length
+        < self.prev_block % self.config.neuron.epoch_length
+    )
 
 
 def set_weights(self):
@@ -41,7 +44,10 @@ def set_weights(self):
     bt.logging.trace("top10 uids", raw_weights.sort()[1])
 
     # Process the raw weights to final_weights via subtensor limitations.
-    (processed_weight_uids, processed_weights,) = bt.utils.weight_utils.process_weights_for_netuid(
+    (
+        processed_weight_uids,
+        processed_weights,
+    ) = bt.utils.weight_utils.process_weights_for_netuid(
         uids=self.metagraph.uids.to("cpu"),
         weights=raw_weights.to("cpu"),
         netuid=self.config.netuid,

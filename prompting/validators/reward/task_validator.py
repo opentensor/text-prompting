@@ -20,44 +20,61 @@ from .config import RewardModelType
 from .reward import BaseRewardModel
 
 
-class TaskValidator( BaseRewardModel ):
-
+class TaskValidator(BaseRewardModel):
     @property
-    def name(self) -> str: return RewardModelType.task_validator.value
+    def name(self) -> str:
+        return RewardModelType.task_validator.value
 
     def __init__(self):
         super().__init__()
 
-    def reward( self, prompt: str, completion: str, name: str ) -> float:
-        summary_keywords = ['Summary:', 'Paraphrase:', 'Paraphrasing:', 'Paraphrased:']
-        question_keywords = ['Question:', 'Query:', 'Q:']
-        answer_keywords = ['Answer:', 'Response:', 'A:', 'Completion:']
-        
-        completion_contains_answer = any(answer_keyword.lower() in completion.lower() for answer_keyword in answer_keywords)
-        completion_contains_question = any(question_keyword.lower() in completion.lower() for question_keyword in question_keywords)
-        completion_contains_summary = any(summary_keyword.lower() in completion.lower() for summary_keyword in summary_keywords)
+    def reward(self, prompt: str, completion: str, name: str) -> float:
+        summary_keywords = ["Summary:", "Paraphrase:", "Paraphrasing:", "Paraphrased:"]
+        question_keywords = ["Question:", "Query:", "Q:"]
+        answer_keywords = ["Answer:", "Response:", "A:", "Completion:"]
 
-        is_summarization_prompt = name == 'augment'
-        is_question_prompt = name.startswith('followup')
-        is_answer_prompt = name.startswith('answer')
+        completion_contains_answer = any(
+            answer_keyword.lower() in completion.lower()
+            for answer_keyword in answer_keywords
+        )
+        completion_contains_question = any(
+            question_keyword.lower() in completion.lower()
+            for question_keyword in question_keywords
+        )
+        completion_contains_summary = any(
+            summary_keyword.lower() in completion.lower()
+            for summary_keyword in summary_keywords
+        )
 
-        if (is_summarization_prompt or is_question_prompt) and completion_contains_answer:
+        is_summarization_prompt = name == "augment"
+        is_question_prompt = name.startswith("followup")
+        is_answer_prompt = name.startswith("answer")
+
+        if (
+            is_summarization_prompt or is_question_prompt
+        ) and completion_contains_answer:
             return 0.0
 
-        if (is_summarization_prompt or is_answer_prompt) and completion_contains_question:
+        if (
+            is_summarization_prompt or is_answer_prompt
+        ) and completion_contains_question:
             return 0.0
 
         if not is_summarization_prompt and completion_contains_summary:
-            return 0.0 
+            return 0.0
 
         return 1
 
-    def get_rewards( self, prompt: str, completions: List[str], name: str ) -> torch.FloatTensor:
-        return torch.tensor( [self.reward( prompt, completion, name ) for completion in completions], dtype=torch.float32)
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> torch.FloatTensor:
+        return torch.tensor(
+            [self.reward(prompt, completion, name) for completion in completions],
+            dtype=torch.float32,
+        )
 
-    def normalize_rewards( self, rewards: torch.FloatTensor ) -> torch.FloatTensor:
+    def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards
 
     def reset(self):
         pass
-
