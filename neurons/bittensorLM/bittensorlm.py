@@ -50,10 +50,10 @@ class StopOnTokens(StoppingCriteria):
 
 
 class CerebrasBTLMMiner(Miner):
-    @classmethod
-    def config(cls) -> "bt.Config":
+
+    def config(self) -> "bt.Config":
         parser = argparse.ArgumentParser(description="Bittensor-LM Miner Config")
-        cls.add_args(parser)
+        self.add_args(parser)
         return bt.config(parser)
 
     @classmethod
