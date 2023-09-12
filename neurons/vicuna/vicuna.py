@@ -19,7 +19,7 @@ import time
 import torch
 import argparse
 import openminers
-import bittensor
+import bittensor as bt
 
 from typing import List, Dict
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -70,7 +70,7 @@ class VicunaMiner(openminers.BasePromptingMiner):
 
     def __init__(self, *args, **kwargs):
         super(VicunaMiner, self).__init__(*args, **kwargs)
-        bittensor.logging.info("Loading " + str(self.config.vicuna.model_name))
+        bt.logging.info("Loading " + str(self.config.vicuna.model_name))
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.config.vicuna.model_name, use_fast=False
         )
@@ -79,7 +79,7 @@ class VicunaMiner(openminers.BasePromptingMiner):
             torch_dtype=torch.float16,
             low_cpu_mem_usage=True,
         )
-        bittensor.logging.info("Model loaded!")
+        bt.logging.info("Model loaded!")
 
         if self.config.vicuna.device != "cpu":
             self.model = self.model.to(self.config.vicuna.device)
@@ -117,8 +117,8 @@ class VicunaMiner(openminers.BasePromptingMiner):
         )
 
         # Logging input and generation if debugging is active
-        bittensor.logging.debug("Message: " + str(messages))
-        bittensor.logging.debug("Generation: " + str(generation))
+        bt.logging.debug("Message: " + str(messages))
+        bt.logging.debug("Generation: " + str(generation))
         return generation
 
 
