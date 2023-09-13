@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 Opentensor Foundation
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -17,18 +16,11 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# Bittensor Miner Template:# Step 1: Import necessary libraries and modules
-
-from miners.revolution_miner import Miner
-from prompting.protocol import Prompting
-import bittensor as bt
-
-class TemplateMiner(Miner):
-    def prompt(self, synapse: Prompting) -> Prompting:
-        bt.logging.debug("In prompt!")
-        synapse.completion = "I am a chatbot"
-        return synapse
-
-# This is the main function, which runs the miner.
-if __name__ == "__main__":
-    TemplateMiner().run()
+from . import blacklist
+from . import config
+from . import forward
+from . import miner
+from . import mock
+from . import priority
+from . import run
+from . import set_weights

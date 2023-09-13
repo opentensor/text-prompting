@@ -27,15 +27,21 @@ from prompting.validators.reward import MockRewardModel
 
 def should_reinit_wandb(self):
     # Check if wandb run needs to be rolled over.
-    return not self.config.wandb.off and self.step and self.step % self.config.wandb.run_step_length == 0
+    return (
+        not self.config.wandb.off
+        and self.step
+        and self.step % self.config.wandb.run_step_length == 0
+    )
 
 
 def init_wandb(self, reinit=False):
     """Starts a new wandb run."""
-    tags = [self.wallet.hotkey.ss58_address,
-            validators.__version__,
-            str(validators.__spec_version__),
-            f'netuid_{self.metagraph.netuid}']
+    tags = [
+        self.wallet.hotkey.ss58_address,
+        validators.__version__,
+        str(validators.__spec_version__),
+        f"netuid_{self.metagraph.netuid}",
+    ]
 
     if self.config.mock:
         tags.append("mock")
@@ -49,8 +55,11 @@ def init_wandb(self, reinit=False):
     if self.config.neuron.disable_log_rewards:
         tags.append("disable_log_rewards")
 
-    wandb_config = {key: copy.deepcopy(self.config.get(key, None)) for key in ('neuron', 'reward', 'netuid', 'wandb')}
-    wandb_config['neuron'].pop('full_path', None)
+    wandb_config = {
+        key: copy.deepcopy(self.config.get(key, None))
+        for key in ("neuron", "reward", "netuid", "wandb")
+    }
+    wandb_config["neuron"].pop("full_path", None)
 
     self.wandb = wandb.init(
         anonymous="allow",
@@ -90,7 +99,7 @@ def checkpoint(self):
     save_state(self)
 
 
-def resync_metagraph(self: 'validators.neuron.neuron'):
+def resync_metagraph(self: "validators.neuron.neuron"):
     """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
     bt.logging.info("resync_metagraph()")
 
@@ -104,7 +113,9 @@ def resync_metagraph(self: 'validators.neuron.neuron'):
     metagraph_axon_info_updated = previous_metagraph.axons != self.metagraph.axons
 
     if metagraph_axon_info_updated:
-        bt.logging.info("Metagraph updated, re-syncing hotkeys, dendrite pool and moving averages")
+        bt.logging.info(
+            "Metagraph updated, re-syncing hotkeys, dendrite pool and moving averages"
+        )
 
         # Zero out all hotkeys that have been replaced.
         for uid, hotkey in enumerate(self.hotkeys):
@@ -125,8 +136,6 @@ def resync_metagraph(self: 'validators.neuron.neuron'):
 
         # Update the hotkeys.
         self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
-    
-    
 
 
 def resync_linear_layer(
@@ -142,8 +151,12 @@ def resync_linear_layer(
          metagraph (:obj: bt.metagraph.Metagraph):
              Latest state of the metagraph with updated uids and hotkeys
     """
-    uids_hotkeys_state_dict = dict(zip(previous_metagraph.uids.tolist(), previous_metagraph.hotkeys))
-    latest_uids_hotkeys_state_dict = dict(zip(metagraph.uids.tolist(), metagraph.hotkeys))
+    uids_hotkeys_state_dict = dict(
+        zip(previous_metagraph.uids.tolist(), previous_metagraph.hotkeys)
+    )
+    latest_uids_hotkeys_state_dict = dict(
+        zip(metagraph.uids.tolist(), metagraph.hotkeys)
+    )
 
     updated_uids_indices = []
     for uid, latest_hotkey in latest_uids_hotkeys_state_dict.items():
@@ -162,7 +175,9 @@ def resync_linear_layer(
         linear_layer.weight[index].data.copy_(reinitialized_weights)
 
 
-def check_uid_availability(metagraph: "bt.metagraph.Metagraph", uid: int, vpermit_tao_limit: int) -> bool:
+def check_uid_availability(
+    metagraph: "bt.metagraph.Metagraph", uid: int, vpermit_tao_limit: int
+) -> bool:
     """Check if uid is available. The UID should be available if it is serving and has less than vpermit_tao_limit stake
     Args:
         metagraph (:obj: bt.metagraph.Metagraph): Metagraph object
@@ -187,7 +202,7 @@ def save_state(self):
     bt.logging.info("save_state()")
     try:
         neuron_state_dict = {
-            "neuron_weights": self.moving_averaged_scores.to('cpu').tolist(),
+            "neuron_weights": self.moving_averaged_scores.to("cpu").tolist(),
             "neuron_hotkeys": self.hotkeys,
         }
         torch.save(neuron_state_dict, f"{self.config.neuron.full_path}/model.torch")
@@ -206,24 +221,30 @@ def save_state(self):
         torch.save(gating_model_linear_layer_dict, gating_model_file_path)
 
         if not self.config.wandb.off:
-            wandb.log({
-                "step": self.step,
-                "block": ttl_get_block(self),
-                **neuron_state_dict
-            })
+            wandb.log(
+                {"step": self.step, "block": ttl_get_block(self), **neuron_state_dict}
+            )
         if not self.config.wandb.off and self.config.wandb.track_gating_model:
-            model_artifact = wandb.Artifact(f"{gating_model_name}_gating_linear_layer", type="model")
+            model_artifact = wandb.Artifact(
+                f"{gating_model_name}_gating_linear_layer", type="model"
+            )
             model_artifact.add_file(gating_model_file_path)
             self.wandb.log_artifact(model_artifact)
 
-        bt.logging.success(prefix="Saved gating model", sufix=f"<blue>{gating_model_file_path}</blue>")
+        bt.logging.success(
+            prefix="Saved gating model", sufix=f"<blue>{gating_model_file_path}</blue>"
+        )
     except Exception as e:
         bt.logging.warning(f"Failed to save gating model with error: {e}")
 
     try:
         # Save diversity model.
-        diversity_model_dict = {"historic_embeddings": self.diversity_model.historic_embeddings.to('cpu')}
-        diversity_model_file_path = f"{self.config.neuron.full_path}/diversity_model.pth"
+        diversity_model_dict = {
+            "historic_embeddings": self.diversity_model.historic_embeddings.to("cpu")
+        }
+        diversity_model_file_path = (
+            f"{self.config.neuron.full_path}/diversity_model.pth"
+        )
         torch.save(diversity_model_dict, diversity_model_file_path)
         bt.logging.success(
             prefix="Saved diversity model",
@@ -255,9 +276,13 @@ def load_state(self):
 
     try:
         # Load diversity model.
-        diversity_model_file_path = f"{self.config.neuron.full_path}/diversity_model.pth"
+        diversity_model_file_path = (
+            f"{self.config.neuron.full_path}/diversity_model.pth"
+        )
         diversity_model_dict = torch.load(diversity_model_file_path)
-        self.diversity_model.historic_embeddings = diversity_model_dict["historic_embeddings"].to(self.device)
+        self.diversity_model.historic_embeddings = diversity_model_dict[
+            "historic_embeddings"
+        ].to(self.device)
         bt.logging.success(
             prefix="Reloaded diversity model",
             sufix=f"<blue>{diversity_model_file_path}</blue> {list(self.diversity_model.historic_embeddings.shape)}",

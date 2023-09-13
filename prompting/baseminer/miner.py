@@ -16,6 +16,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
+import copy
 import time
 import wandb
 import argparse
@@ -29,11 +30,12 @@ from typing import List, Dict, Tuple, Union
 import bittensor as bt
 from prompting.protocol import Prompting
 
-from miners.priority import priority
-from miners.blacklist import blacklist
-from miners.run import run
-from miners.set_weights import set_weights
-from miners.config import check_config, get_config
+from prompting.baseminer.priority import priority
+from prompting.baseminer.blacklist import blacklist
+from prompting.baseminer.run import run
+from prompting.baseminer.set_weights import set_weights
+from prompting.baseminer.config import check_config, get_config
+
 
 class Miner(ABC):
     """
@@ -52,8 +54,11 @@ class Miner(ABC):
             wallet: Bittensor Wallet object which holds cryptographic keys.
             subtensor: Bittensor Subtensor object which manages the blockchain connection.
         """
-        # Setup and check config
-        self.config = config or get_config()
+        # Setup base config from Miner.config() and merge with subclassed config.
+        base_config = copy.deepcopy(config or get_config())
+        self.config = self.config()
+        self.config.merge(base_config)
+
         check_config(Miner, self.config)
         bt.logging.info(self.config)  # TODO: duplicate print?
 
@@ -102,7 +107,14 @@ class Miner(ABC):
 
         # The axon handles request processing, allowing validators to send this process requests.
         self.axon = axon or bt.axon(wallet=self.wallet, port=self.config.axon.port)
-        bt.logging.info(f"Axon {self.axon}")
+        # Attach determiners which functions are called when servicing a request.
+        bt.logging.info(f"Attaching forward function to axon.")
+        self.axon.attach(
+            forward_fn=self.prompt,
+            blacklist_fn=self.blacklist,
+            priority_fn=self.priority,
+        )
+        bt.logging.info(f"Axon created: {self.axon}")
 
         if self.config.wandb.on:
             tags = [self.wallet.hotkey.ss58_address, f"netuid_{self.config.netuid}"]
@@ -124,10 +136,56 @@ class Miner(ABC):
         self.request_timestamps: Dict = {}
 
     @abstractmethod
-    def prompt(self, synapse: Prompting) -> Prompting:
+    def config(self) -> "bt.Config":
+        """
+        Abstract method for configuring the Miner.
+
+        Subclasses should implement this method to return a configuration object that dictates
+        various settings and parameters for the miner's operation. The returned configuration
+        object will typically contain parameters like network settings, logging preferences,
+        and other operational parameters.
+
+        Returns:
+            bt.Config: A configuration object specific to the miner subclass.
+        """
         ...
 
-    def blacklist(self, synapse: Prompting) -> bool:
+    @classmethod
+    @abstractmethod
+    def add_args(cls, parser: argparse.ArgumentParser):
+        """
+        Abstract class method to add miner-specific arguments to a command line parser.
+
+        This method should be implemented by subclasses to introduce any command-line
+        arguments that the miner might require for operation.
+
+        Args:
+            parser (argparse.ArgumentParser): The command line argument parser to which
+                the miner-specific arguments should be added.
+        """
+        ...
+
+    @abstractmethod
+    def prompt(self, synapse: Prompting) -> Prompting:
+        """
+        Abstract method to handle and respond to incoming requests to the miner.
+
+        Subclasses should implement this method to define how the miner processes
+        incoming requests and what responses should be sent back. The logic can include
+        operations like data processing, validation, or any other computation as required
+        by the specific mining operation.
+
+        Args:
+            synapse (Prompting): The incoming request object encapsulating the details
+                of the request. This must contain `messages` and `roles` as fields.
+
+        Returns:
+            Prompting: The response object that should be sent back in reply to the
+                incoming request. This is essentially the filled synapse request object.
+        """
+        ...
+
+    def blacklist(self, synapse: Prompting) -> Tuple[bool, str]:
         """
         Default blacklist logic
 
@@ -144,11 +202,10 @@ class Miner(ABC):
         Returns:
             blacklisted (:obj:`bool`):
         """
-        def _blacklist(
-            synapse: "Prompting"
-        ) -> Union[Tuple[bool, str], bool]:
+
+        def _blacklist(synapse: "Prompting") -> Tuple[bool, str]:
             raise NotImplementedError("blacklist not implemented in subclass")
-    
+
         return blacklist(self, _blacklist, synapse)
 
     def priority(self, synapse: Prompting) -> float:
@@ -169,13 +226,10 @@ class Miner(ABC):
             priority (:obj:`float`):
         """
 
-        def _priority(
-            synapse: "Prompting"
-        ) -> Union[Tuple[bool, str], bool]:
+        def _priority(synapse: "Prompting") -> bool:
             raise NotImplementedError("priority not implemented in subclass")
-    
-        return priority(self, _priority, synapse)
 
+        return priority(self, _priority, synapse)
 
     def run(self):
         """

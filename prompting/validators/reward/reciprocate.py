@@ -1,4 +1,3 @@
-
 # The MIT License (MIT)
 # Copyright © 2021 Yuma Rao
 
@@ -22,31 +21,44 @@ from .config import RewardModelType
 from .reward import BaseRewardModel
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-class ReciprocateRewardModel( BaseRewardModel ):
 
+class ReciprocateRewardModel(BaseRewardModel):
     reward_model_path: str = "reciprocate/gpt-j_rm_format-oa"
     revision: str = "501f895"
 
     @property
-    def name(self) -> str: return RewardModelType.reciprocate.value
+    def name(self) -> str:
+        return RewardModelType.reciprocate.value
 
-    def __init__( self, device: str ):
+    def __init__(self, device: str):
         super().__init__()
         self.device = device
-        self.tokenizer = AutoTokenizer.from_pretrained( ReciprocateRewardModel.reward_model_path, revision = ReciprocateRewardModel.revision )
-        self.model = AutoModelForSequenceClassification.from_pretrained( ReciprocateRewardModel.reward_model_path,
-                                                                         revision = ReciprocateRewardModel.revision,
-                                                                         torch_dtype=torch.float16).to(self.device)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            ReciprocateRewardModel.reward_model_path,
+            revision=ReciprocateRewardModel.revision,
+        )
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            ReciprocateRewardModel.reward_model_path,
+            revision=ReciprocateRewardModel.revision,
+            torch_dtype=torch.float16,
+        ).to(self.device)
 
-    def reward( self, prompt: str, completion: str, name: str ) -> float:
+    def reward(self, prompt: str, completion: str, name: str) -> float:
         with torch.no_grad():
-            message = f"<|prompter|>{prompt}</s><|assistant|>{completion}</s><|endoftext|>"
-            inputs = self.tokenizer( message,
-                                     return_tensors="pt" ,
-                                     truncation=True,
-                                     ).to(self.device)
-            return float( self.model( **inputs )[0].item() )
-        
-    def get_rewards( self, prompt: str, completions: List[str], name: str ) -> torch.FloatTensor:
-        return torch.tensor( [self.reward( prompt, completion, name ) for completion in completions], dtype=torch.float32).to(self.device)
-        
+            message = (
+                f"<|prompter|>{prompt}</s><|assistant|>{completion}</s><|endoftext|>"
+            )
+            inputs = self.tokenizer(
+                message,
+                return_tensors="pt",
+                truncation=True,
+            ).to(self.device)
+            return float(self.model(**inputs)[0].item())
+
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> torch.FloatTensor:
+        return torch.tensor(
+            [self.reward(prompt, completion, name) for completion in completions],
+            dtype=torch.float32,
+        ).to(self.device)
