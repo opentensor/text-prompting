@@ -59,7 +59,7 @@ python -m neurons/miners/bittensorLM/miner.py
 # To run the validator
 python -m neurons/validators/validator.py
     --netuid 8
-    --subtensor.chain_endpoint test 
+    --subtensor.network test 
     --wallet.name <your validator wallet>  # Must be created using the bittensor-cli
     --wallet.hotkey <your validator hotkey> # Must be created using the bittensor-cli
     --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
