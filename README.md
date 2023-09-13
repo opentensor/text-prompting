@@ -15,7 +15,7 @@
 
 ---
 
-This template contains all the necessary files and functions to run Bittensor's Text-Prompting Subnet. You can try run miners on netuid 8 in Bittensor's test network.
+This template contains all the necessary files and functions to run Bittensor's Text-Prompting Subnet. You can try running miners on netuid 8 in Bittensor's test network.
 
 # Introduction
 The Bittensor blockchain hosts multiple self-contained incentive mechanisms 'subnets'. Subnets are playing fields through which miners (those producing value) and validators (those producing consensus) determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e. generating digital commodities, such as intelligence, or data. Each consists of a wire protocol through which miners and validators interact and their method of interacting with Bittensor's chain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus) which is designed to drive these actors into agreement about who is creating value.
