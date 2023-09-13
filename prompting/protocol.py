@@ -44,8 +44,8 @@ class Prompting(bt.Synapse):
         deserialize() -> "Prompting": Returns the instance of the current object.
 
 
-    The `Prompting` class also overrides the `deserialize` method, returning the 
-    instance itself when this method is invoked. Additionally, it provides a `Config` 
+    The `Prompting` class also overrides the `deserialize` method, returning the
+    instance itself when this method is invoked. Additionally, it provides a `Config`
     inner class that enforces the validation of assignments (`validate_assignment = True`).
 
     Here is an example of how the `Prompting` class can be used:
@@ -74,18 +74,20 @@ class Prompting(bt.Synapse):
     Completion: "The meaning of life is 42. Deal with it, human."
     ```
 
-    This example demonstrates how to create an instance of the `Prompting` class, access the 
+    This example demonstrates how to create an instance of the `Prompting` class, access the
     `roles` and `messages` fields, and update the `completion` field.
 
 
     """
+
     class Config:
         """
         Pydantic model configuration class for Prompting. This class sets validation of attribute assignment as True.
         validate_assignment set to True means the pydantic model will validate attribute assignments on the class.
         """
+
         validate_assignment = True
-        
+
     def deserialize(self) -> "Prompting":
         """
         Returns the instance of the current Prompting object.
@@ -100,21 +102,21 @@ class Prompting(bt.Synapse):
         return self
 
     roles: List[str] = pydantic.Field(
-        ..., 
-        title="Roles", 
-        description="A list of roles in the Prompting scenario. Immuatable.", 
-        allow_mutation=False
+        ...,
+        title="Roles",
+        description="A list of roles in the Prompting scenario. Immuatable.",
+        allow_mutation=False,
     )
 
     messages: List[str] = pydantic.Field(
-        ..., 
-        title="Messages", 
+        ...,
+        title="Messages",
         description="A list of messages in the Prompting scenario. Immutable.",
-        allow_mutation=False
+        allow_mutation=False,
     )
 
     completion: str = pydantic.Field(
         "",
         title="Completion",
-        description="Completion status of the current Prompting object. This attribute is mutable and can be updated."
+        description="Completion status of the current Prompting object. This attribute is mutable and can be updated.",
     )

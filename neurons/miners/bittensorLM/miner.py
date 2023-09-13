@@ -52,10 +52,11 @@ from prompting.protocol import Prompting
 class StopOnTokens(StoppingCriteria):
     """
     Custom stopping criteria for the BTLM model.
-    
-    This class defines a stopping criterion based on specific tokens. The model stops generating 
+
+    This class defines a stopping criterion based on specific tokens. The model stops generating
     once it encounters one of the specified stop tokens.
     """
+
     def __init__(self, stop_token_ids: List[int]):
         self.stop_token_ids = stop_token_ids
 
@@ -72,9 +73,10 @@ class CerebrasBTLMMiner(Miner):
     """
     Bittensor miner implementation using the Cerebras BTLM model.
 
-    This miner processes incoming requests from the Bittensor network and uses the Cerebras 
+    This miner processes incoming requests from the Bittensor network and uses the Cerebras
     BTLM model to generate appropriate responses based on the provided context.
     """
+
     def config(self) -> "bt.Config":
         """
         Returns the configuration object specific to this miner. Creates an argument parser
@@ -91,7 +93,7 @@ class CerebrasBTLMMiner(Miner):
         """
         Adds BTLM-specific arguments to the command line parser.
 
-        This method introduces command-line arguments that pertain specifically to the 
+        This method introduces command-line arguments that pertain specifically to the
         BTLM model's generation settings, such as device, max length, and sampling method.
         """
         parser.add_argument(
@@ -194,7 +196,7 @@ class CerebrasBTLMMiner(Miner):
         """
         Processes the conversation history for model input.
 
-        This method takes the roles and messages from the incoming request and constructs 
+        This method takes the roles and messages from the incoming request and constructs
         a conversation history suitable for model input. It also injects a system prompt
         if the configuration specifies to do so.
         """
@@ -217,7 +219,7 @@ class CerebrasBTLMMiner(Miner):
 
         This is a required method to implement and must take a `Prompting` synapse as input
 
-        This method constructs a conversation history from the incoming request and uses 
+        This method constructs a conversation history from the incoming request and uses
         the BTLM model to generate a response based on the provided context.
         """
         history = self._process_history(roles=synapse.roles, messages=synapse.messages)
@@ -248,7 +250,7 @@ if __name__ == "__main__":
 
     This script initializes and runs the CerebrasBTLMMiner, connecting it to the Bittensor network.
     The miner listens for incoming requests and responds using the Cerebras BTLM model.
-    
+
     Developers can start the miner by executing this script. It uses the context manager to ensure
     proper cleanup of resources after the miner is stopped.
     """

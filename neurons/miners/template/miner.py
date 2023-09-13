@@ -33,12 +33,13 @@ from prompting.baseminer.miner import Miner
 from prompting.protocol import Prompting
 import bittensor as bt
 
+
 class TemplateMiner(Miner):
     def config(self) -> "bt.Config":
         """
         Returns the configuration object specific to this miner.
 
-        Implement and extend this method to provide custom configurations for the miner. 
+        Implement and extend this method to provide custom configurations for the miner.
         Currently, it sets up a basic configuration parser.
 
         Returns:
@@ -52,11 +53,11 @@ class TemplateMiner(Miner):
         """
         Adds custom arguments to the command line parser.
 
-        Developers can introduce additional command-line arguments specific to the miner's 
+        Developers can introduce additional command-line arguments specific to the miner's
         functionality in this method. These arguments can then be used to configure the miner's operation.
 
         Args:
-            parser (argparse.ArgumentParser): 
+            parser (argparse.ArgumentParser):
                 The command line argument parser to which custom arguments should be added.
         """
         pass
@@ -65,8 +66,8 @@ class TemplateMiner(Miner):
         """
         Handles incoming requests and provides a static response.
 
-        This method processes the incoming request encapsulated in the `synapse` object and 
-        returns a static response: "I am a chatbot". Developers can extend this method to 
+        This method processes the incoming request encapsulated in the `synapse` object and
+        returns a static response: "I am a chatbot". Developers can extend this method to
         provide dynamic or more sophisticated responses. See bittensor's implentation of Synapse
         for more information.
 
@@ -80,15 +81,16 @@ class TemplateMiner(Miner):
         synapse.completion = "I am a chatbot"
         return synapse
 
+
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
     """
     Main execution point for the TemplateMiner.
 
-    This script initializes and runs the TemplateMiner, connecting it to the Bittensor network. 
+    This script initializes and runs the TemplateMiner, connecting it to the Bittensor network.
     The miner listens for incoming requests and responds with a static message.
-    
-    Developers can start the miner by simply executing this script. To add more functionalities 
+
+    Developers can start the miner by simply executing this script. To add more functionalities
     or customize the miner's behavior, consider extending the TemplateMiner class above.
     """
     TemplateMiner().run()
