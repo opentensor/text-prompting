@@ -28,14 +28,41 @@ from prompting.protocol import Prompting
 
 
 class VicunaMiner(Miner):
-    
-    def config(self) -> "bt.Config":
+    """
+    A Bittensor Miner subclass specific to the Vicuna model.
+
+    This class is designed for the Vicuna language model and handles input/output processing
+    specific to the model's requirements. It extends the Miner class of Bittensor, which
+    is a general blueprint for all kinds of miners or nodes.
+
+    Args:
+        config (:obj:`argparse.ArgumentParser`, optional): An argparse.ArgumentParser instance. If not provided,
+            the default config will be used. Defaults to None.
+
+    Attributes:
+        tokenizer (AutoTokenizer): Tokenizer corresponding to the loaded model.
+        model (AutoModelForCausalLM): The causal language model for text generation.
+    """
+
+    def config(self) -> "bt.config":
+        """
+        Configures the Vicuna Miner with relevant arguments.
+
+        Returns:
+            bt.Config: A configuration object with parsed arguments.
+        """
         parser = argparse.ArgumentParser(description="Vicuna Miner Configs")
         self.add_args(parser)
         return bt.config(parser)
 
     @classmethod
     def add_args(cls, parser: argparse.ArgumentParser):
+        """
+        Adds specific arguments to the argparse parser for Vicuna Miner configuration.
+
+        Args:
+            parser (argparse.ArgumentParser): The argparse parser to which arguments are added.
+        """
         parser.add_argument(
             "--vicuna.model_name",
             type=str,
@@ -77,6 +104,13 @@ class VicunaMiner(Miner):
         )
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the VicunaMiner, loading the tokenizer and model based on the given configuration.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
         super(VicunaMiner, self).__init__(*args, **kwargs)
         bt.logging.info("Loading " + str(self.config.vicuna.model_name))
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -93,20 +127,39 @@ class VicunaMiner(Miner):
             self.model = self.model.to(self.config.vicuna.device)
 
     def _process_history(self, roles: List[str], messages: List[str]) -> str:
+        """
+        Processes message history by concatenating roles and messages.
+
+        Args:
+            roles (List[str]): A list of roles, e.g., 'system', 'Assistant', 'user'.
+            messages (List[str]): A list of corresponding messages for each role.
+
+        Returns:
+            str: Processed message history.
+        """
         processed_history = ""
         if self.config.vicuna.do_prompt_injection:
             processed_history += self.config.vicuna.system_prompt
-        for role, message in  zip(roles, messages):
+        for role, message in zip(roles, messages):
             if role == "system":
                 if not self.config.vicuna.do_prompt_injection or message != message[0]:
-                    processed_history += "" + message["content"].strip() + " "
+                    processed_history += "" + message.strip() + " "
             if role == "Assistant":
-                processed_history += "ASSISTANT:" + message["content"].strip() + "</s>"
+                processed_history += "ASSISTANT:" + message.strip() + "</s>"
             if role == "user":
-                processed_history += "USER: " + message["content"].strip() + " "
+                processed_history += "USER: " + message.strip() + " "
         return processed_history
 
     def prompt(self, synapse: Prompting) -> Prompting:
+        """
+        Given a Synapse object with message history, prompts the Vicuna model for a completion.
+
+        Args:
+            synapse (Prompting): A Synapse object encapsulating roles and messages.
+
+        Returns:
+            Prompting: A Synapse object with the generated completion added.
+        """
         history = self._process_history(roles=synapse.roles, messages=synapse.messages)
         prompt = history + "ASSISTANT:"
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(
@@ -132,6 +185,15 @@ class VicunaMiner(Miner):
 
 
 if __name__ == "__main__":
+    """
+    Entry point for the VicunaMiner application.
+
+    When the script is run directly, a VicunaMiner instance is created and initiated. This miner keeps
+    running, periodically logging the current time as a demonstration of its ongoing activity.
+
+    The `with` context manager ensures that all resources used by VicunaMiner are properly released
+    once the execution is stopped.
+    """
     with VicunaMiner():
         while True:
             print("running...", time.time())

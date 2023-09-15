@@ -15,6 +15,19 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+"""
+Bittensor CerebrasBTLMMiner Template
+
+This template provides an implementation of a Bittensor miner that uses the Cerebras BTLM model 
+for processing incoming requests from the Bittensor network. The model generates responses 
+based on the context provided in the incoming requests.
+
+Developers can utilize this template as a starting point to create custom miners using 
+different models or to tweak the settings of the current model for optimal performance.
+
+Ensure the required dependencies, such as Bittensor, DeepSpeed, and Transformers, are installed 
+before running this script, found at neurons/miners/bittensorLM/requirements.txt.
+"""
 
 import os
 import time
@@ -37,6 +50,13 @@ from prompting.protocol import Prompting
 
 
 class StopOnTokens(StoppingCriteria):
+    """
+    Custom stopping criteria for the BTLM model.
+
+    This class defines a stopping criterion based on specific tokens. The model stops generating
+    once it encounters one of the specified stop tokens.
+    """
+
     def __init__(self, stop_token_ids: List[int]):
         self.stop_token_ids = stop_token_ids
 
@@ -50,14 +70,32 @@ class StopOnTokens(StoppingCriteria):
 
 
 class CerebrasBTLMMiner(Miner):
+    """
+    Bittensor miner implementation using the Cerebras BTLM model.
+
+    This miner processes incoming requests from the Bittensor network and uses the Cerebras
+    BTLM model to generate appropriate responses based on the provided context.
+    """
 
     def config(self) -> "bt.Config":
+        """
+        Returns the configuration object specific to this miner. Creates an argument parser
+        and then adds the args to it that can be defined in `add_args()`
+
+        Developers can extend this method to provide custom configurations for the miner.
+        """
         parser = argparse.ArgumentParser(description="Bittensor-LM Miner Config")
         self.add_args(parser)
         return bt.config(parser)
 
     @classmethod
     def add_args(cls, parser: argparse.ArgumentParser):
+        """
+        Adds BTLM-specific arguments to the command line parser.
+
+        This method introduces command-line arguments that pertain specifically to the
+        BTLM model's generation settings, such as device, max length, and sampling method.
+        """
         parser.add_argument(
             "--btlm.device", type=str, help="Device to load model", default="cuda"
         )
@@ -102,6 +140,13 @@ class CerebrasBTLMMiner(Miner):
         )
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the miner and loads the BTLM model.
+
+        This method loads the BTLM model and tokenizer from the HuggingFace model hub and
+        sets up the model pipeline for generation. It also sets up the stopping criteria
+        for the model's generation.
+        """
         super(CerebrasBTLMMiner, self).__init__(*args, **kwargs)
 
         bt.logging.info("Loading BTLM 3B model...")
@@ -128,7 +173,7 @@ class CerebrasBTLMMiner(Miner):
                 raise ValueError(
                     "Invalid device string: {}".format(self.config.btlm.device)
                 )
-
+        # Setup the pipeline for generating tokens
         self.pipe = pipeline(
             "text-generation",
             model=model,
@@ -138,7 +183,7 @@ class CerebrasBTLMMiner(Miner):
             max_new_tokens=self.config.btlm.max_length,
             no_repeat_ngram_size=self.config.btlm.no_repeat_ngram_size,
         )
-
+        # Optionally initialize deepspeed for inference speedup
         if self.config.btlm.use_deepspeed:
             self.pipe.model = deepspeed.init_inference(
                 self.pipe.model,
@@ -148,6 +193,13 @@ class CerebrasBTLMMiner(Miner):
             )
 
     def _process_history(self, roles: List[str], messages: List[str]) -> str:
+        """
+        Processes the conversation history for model input.
+
+        This method takes the roles and messages from the incoming request and constructs
+        a conversation history suitable for model input. It also injects a system prompt
+        if the configuration specifies to do so.
+        """
         processed_history = ""
         if self.config.btlm.do_prompt_injection:
             processed_history += self.config.btlm.system_prompt
@@ -162,6 +214,14 @@ class CerebrasBTLMMiner(Miner):
         return processed_history
 
     def prompt(self, synapse: Prompting) -> Prompting:
+        """
+        Processes incoming requests using the BTLM model.
+
+        This is a required method to implement and must take a `Prompting` synapse as input
+
+        This method constructs a conversation history from the incoming request and uses
+        the BTLM model to generate a response based on the provided context.
+        """
         history = self._process_history(roles=synapse.roles, messages=synapse.messages)
         history += "assistant: "
         bt.logging.debug("History: {}".format(history))
@@ -185,6 +245,15 @@ class CerebrasBTLMMiner(Miner):
 
 
 if __name__ == "__main__":
+    """
+    Main execution point for the CerebrasBTLMMiner.
+
+    This script initializes and runs the CerebrasBTLMMiner, connecting it to the Bittensor network.
+    The miner listens for incoming requests and responds using the Cerebras BTLM model.
+
+    Developers can start the miner by executing this script. It uses the context manager to ensure
+    proper cleanup of resources after the miner is stopped.
+    """
     bt.debug()
     miner = CerebrasBTLMMiner()
     with miner:
