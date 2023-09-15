@@ -1,0 +1,4 @@
+transformers>=4.28.0, <=4.31.0
+xformers
+accelerate
+deepspeed
