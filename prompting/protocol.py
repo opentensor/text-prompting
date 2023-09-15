@@ -22,6 +22,7 @@ import time
 import torch
 from typing import List
 import bittensor as bt
+from starlette.responses import StreamingResponse
 
 
 class Prompting(bt.Synapse):
@@ -124,14 +125,48 @@ class Prompting(bt.Synapse):
 
 class StreamPrompting(bt.StreamingSynapse):
     """
-    StreamPrompting is a subclass of StreamingSynapse that is specifically designed for prompting network functionality.
-    It overrides abstract methods from the parent class to provide concrete implementations for processing streaming responses,
-    deserializing the response, and extracting JSON data.
+    StreamPrompting is a specialized implementation of the `StreamingSynapse` tailored for prompting functionalities within
+    the Bittensor network. This class is intended to interact with a streaming response that contains a sequence of tokens,
+    which represent prompts or messages in a certain scenario. 
+
+    As a developer, when using or extending the `StreamPrompting` class, you should be primarily focused on the structure 
+    and behavior of the prompts you are working with. The class has been designed to seamlessly handle the streaming, 
+    decoding, and accumulation of tokens that represent these prompts. 
 
     Attributes:
-        roles: List of roles associated with the prompt.
-        messages: List of messages to be processed.
-        completion: A string to store the completion result.
+    - `roles` (List[str]): A list of roles involved in the prompting scenario. This could represent different entities 
+                           or agents involved in the conversation or use-case. They are immutable to ensure consistent
+                           interaction throughout the lifetime of the object.
+                           
+    - `messages` (List[str]): These represent the actual prompts or messages in the prompting scenario. They are also 
+                              immutable to ensure consistent behavior during processing.
+                              
+    - `completion` (str): Stores the processed result of the streaming tokens. As tokens are streamed, decoded, and 
+                          processed, they are accumulated in the completion attribute. This represents the "final" 
+                          product or result of the streaming process.
+
+    Methods:
+    - `process_streaming_response`: This method asynchronously processes the incoming streaming response by decoding 
+                                    the tokens and accumulating them in the `completion` attribute.
+                                    
+    - `deserialize`: Converts the `completion` attribute into its desired data format, in this case, a string.
+    
+    - `extract_response_json`: Extracts relevant JSON data from the response, useful for gaining insights on the response's
+                               metadata or for debugging purposes.
+
+    Example usage:
+    ```python
+    stream_prompter = StreamPrompting(roles=["role1", "role2"], messages=["message1", "message2"])
+    # Process a streaming response...
+    stream_prompter.process_streaming_response(response)
+    # Access the result
+    result = stream_prompter.deserialize()
+    # Extract response metadata
+    json_info = stream_prompter.extract_response_json(response)
+    ```
+
+    Note: While you can directly use the `StreamPrompting` class, it's designed to be extensible. Thus, you can create
+    subclasses to further customize behavior for specific prompting scenarios or requirements.
     """
 
     roles: List[str] = pydantic.Field(
@@ -154,13 +189,31 @@ class StreamPrompting(bt.StreamingSynapse):
         description="Completion status of the current Prompting object. This attribute is mutable and can be updated.",
     )
 
-    async def process_streaming_response(self, response):
+    async def process_streaming_response(self, response: StreamingResponse):
         """
-        Processes the streaming response by iterating through the content and decoding tokens.
-        Concatenates the decoded tokens into the completion attribute.
+        `process_streaming_response` is an asynchronous method designed to process the incoming streaming response from the 
+        Bittensor network. It's the heart of the StreamPrompting class, ensuring that streaming tokens, which represent 
+        prompts or messages, are decoded and appropriately managed.
+
+        As the streaming response is consumed, the tokens are decoded from their 'utf-8' encoded format, split based on 
+        newline characters, and concatenated into the `completion` attribute. This accumulation of decoded tokens in the 
+        `completion` attribute allows for a continuous and coherent accumulation of the streaming content.
 
         Args:
-            response: The response object containing the content to be processed.
+            response: The streaming response object containing the content chunks to be processed. Each chunk in this 
+                      response is expected to be a set of tokens that can be decoded and split into individual messages or prompts.
+
+        Usage:
+            Generally, this method is called when there's an incoming streaming response to be processed.
+            
+            ```python
+            stream_prompter = StreamPrompting(roles=["role1", "role2"], messages=["message1", "message2"])
+            await stream_prompter.process_streaming_response(response)
+            ```
+
+        Note: 
+            It's important to remember that this method is asynchronous. Ensure it's called within an appropriate 
+            asynchronous context.
         """
         if self.completion is None:
             self.completion = ""
@@ -170,7 +223,7 @@ class StreamPrompting(bt.StreamingSynapse):
                 if token:
                     self.completion += token
 
-    def deserialize(self):
+    def deserialize(self) -> str:
         """
         Deserializes the response by returning the completion attribute.
 
@@ -179,15 +232,40 @@ class StreamPrompting(bt.StreamingSynapse):
         """
         return self.completion
 
-    def extract_response_json(self, response):
+    def extract_response_json(self, response: StreamingResponse) -> dict:
         """
-        Extracts JSON data from the response, including headers and specific information related to dendrite and axon.
+        `extract_response_json` is a method that performs the crucial task of extracting pertinent JSON data from the given 
+        response. The method is especially useful when you need a detailed insight into the streaming response's metadata 
+        or when debugging response-related issues.
+
+        Beyond just extracting the JSON data, the method also processes and structures the data for easier consumption 
+        and understanding. For instance, it extracts specific headers related to dendrite and axon, offering insights 
+        about the Bittensor network's internal processes. The method ultimately returns a dictionary with a structured 
+        view of the extracted data.
 
         Args:
-            response: The response object from which to extract JSON data.
+            response: The response object from which to extract the JSON data. This object typically includes headers and 
+                      content which can be used to glean insights about the response.
 
         Returns:
-            dict: A dictionary containing extracted JSON data.
+            dict: A structured dictionary containing:
+                - Basic response metadata such as name, timeout, total_size, and header_size.
+                - Dendrite and Axon related information extracted from headers.
+                - Roles and Messages pertaining to the current StreamPrompting instance.
+                - The accumulated completion.
+
+        Usage:
+            This method can be used after processing a response to gather detailed metadata:
+            
+            ```python
+            stream_prompter = StreamPrompting(roles=["role1", "role2"], messages=["message1", "message2"])
+            # After processing the response...
+            json_info = stream_prompter.extract_response_json(response)
+            ```
+
+        Note:
+            While the primary output is the structured dictionary, understanding this output can be instrumental in 
+            troubleshooting or in extracting specific insights about the interaction with the Bittensor network.
         """
         headers = {k.decode('utf-8'): v.decode('utf-8') for k, v in response.__dict__["_raw_headers"]}
 
