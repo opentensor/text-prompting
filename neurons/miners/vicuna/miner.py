@@ -44,7 +44,7 @@ class VicunaMiner(Miner):
         model (AutoModelForCausalLM): The causal language model for text generation.
     """
 
-    def config(self) -> "bt.Config":
+    def config(self) -> "bt.config":
         """
         Configures the Vicuna Miner with relevant arguments.
 
@@ -65,9 +65,9 @@ class VicunaMiner(Miner):
         """
         parser.add_argument(
             "--vicuna.model_name",
-            default="TheBloke/Wizard-Vicuna-7B-Uncensored-HF",
             type=str,
-            help="Name/path of model to load",
+            default="TheBloke/Wizard-Vicuna-7B-Uncensored-HF",
+            help="Name/path of model to load. Also can be a filepath to the model weights (HF)",
         )
         parser.add_argument(
             "--vicuna.device", type=str, help="Device to load model", default="cuda"
