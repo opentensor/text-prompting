@@ -67,16 +67,15 @@ def default_blacklist(self, synapse: Prompting) -> Union[Tuple[bool, str], bool]
         and synapse.dendrite.hotkey not in self.metagraph.hotkeys
     ):
         return True, "hotkey not registered"
-
-    # If the user is registered, it has a UID.
-    uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
-
+    
     # Check if the key has validator permit
-    if (
-        self.config.miner.blacklist.force_validator_permit
-        and not self.metagraph.validator_permit[uid]
-    ):
-        return True, "validator permit required"
+    if self.config.miner.blacklist.force_validator_permit:
+        if synapse.dendrite.hotkey in self.metagraph.hotkeys:
+            uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
+            if not self.metagraph.validator_permit[uid]:
+                return True, "validator permit required"
+        else:
+            return True, "validator permit required, but hotkey not registered"
 
     if is_prompt_in_cache(self, synapse):
         return True, "prompt already sent recently"
