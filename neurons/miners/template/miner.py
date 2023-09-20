@@ -44,7 +44,7 @@ class TemplateMiner(Miner):
         Returns:
             bt.Config: A configuration object with the miner's operational parameters.
         """
-        parser = argparse.ArgumentParser(description="OpenAI Miner Configs")
+        parser = argparse.ArgumentParser(description="Template Miner Configs")
         self.add_args(parser)
         return bt.config(parser)
 
