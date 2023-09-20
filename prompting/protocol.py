@@ -115,6 +115,20 @@ class Prompting(bt.Synapse):
         allow_mutation=False,
     )
 
+    messages_hash: str = pydantic.Field(
+        "",
+        title="Messages Hash",
+        description="Hash of the messages in the Prompting scenario. Immutable.",
+        allow_mutation=False,
+    )
+
+    roles_hash: str = pydantic.Field(
+        "",
+        title="Roles Hash",
+        description="Hash of the roles in the Prompting scenario. Immutable.",
+        allow_mutation=False,
+    )
+
     completion: str = pydantic.Field(
         "",
         title="Completion",
