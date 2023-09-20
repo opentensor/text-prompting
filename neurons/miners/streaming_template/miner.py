@@ -27,8 +27,11 @@ Developers can extend this template by introducing more sophisticated response g
 mechanisms, custom configurations, and additional functionalities.
 """
 
+import asyncio
 import time
 import argparse
+from functools import partial
+from starlette.types import Send
 from prompting.baseminer.miner import Miner
 from transformers import GPT2Tokenizer
 from prompting.protocol import StreamPrompting
@@ -46,7 +49,7 @@ class StreamingTemplateMiner(Miner):
         Returns:
             bt.Config: A configuration object with the miner's operational parameters.
         """
-        parser = argparse.ArgumentParser(description="OpenAI Miner Configs")
+        parser = argparse.ArgumentParser(description="Streaming Miner Configs")
         self.add_args(parser)
         return bt.config(parser)
 
@@ -148,7 +151,7 @@ if __name__ == "__main__":
     Simply execute this script. Ensure all dependencies are properly installed and network 
     configurations are correctly set up.
     """
-    with TemplateMiner():
+    with StreamingTemplateMiner():
         while True:
             print("running...", time.time())
             time.sleep(1)
