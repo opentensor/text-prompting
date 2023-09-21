@@ -70,26 +70,26 @@ class StreamingTemplateMiner(Miner):
         """
         Generates a streaming response for the provided synapse.
 
-        This function serves as the main entry point for handling streaming prompts. It takes 
-        the incoming synapse which contains messages to be processed and returns a streaming 
-        response. The function uses the GPT-2 tokenizer and a simulated model to tokenize and decode 
+        This function serves as the main entry point for handling streaming prompts. It takes
+        the incoming synapse which contains messages to be processed and returns a streaming
+        response. The function uses the GPT-2 tokenizer and a simulated model to tokenize and decode
         the incoming message, and then sends the response back to the client token by token.
 
         Args:
             synapse (StreamPrompting): The incoming StreamPrompting instance containing the messages to be processed.
 
         Returns:
-            StreamPrompting: The streaming response object which can be used by other functions to 
+            StreamPrompting: The streaming response object which can be used by other functions to
                             stream back the response to the client.
 
         Usage:
-            This function can be extended and customized based on specific requirements of the 
-            miner. Developers can swap out the tokenizer, model, or adjust how streaming responses 
+            This function can be extended and customized based on specific requirements of the
+            miner. Developers can swap out the tokenizer, model, or adjust how streaming responses
             are generated to suit their specific applications.
         """
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
-        # Simulated function to decode token IDs into strings. In a real-world scenario, 
+        # Simulated function to decode token IDs into strings. In a real-world scenario,
         # this can be replaced with an actual model inference step.
         def model(ids):
             return (tokenizer.decode(id) for id in ids)
@@ -98,9 +98,9 @@ class StreamingTemplateMiner(Miner):
             """
             Asynchronously processes the input text and sends back tokens as a streaming response.
 
-            This function takes an input text, tokenizes it using the GPT-2 tokenizer, and then 
-            uses the simulated model to decode token IDs into strings. It then sends each token 
-            back to the client as a streaming response, with a delay between tokens to simulate 
+            This function takes an input text, tokenizes it using the GPT-2 tokenizer, and then
+            uses the simulated model to decode token IDs into strings. It then sends each token
+            back to the client as a streaming response, with a delay between tokens to simulate
             the effect of real-time streaming.
 
             Args:
@@ -108,61 +108,66 @@ class StreamingTemplateMiner(Miner):
                 send (Send): An asynchronous function that allows sending back the streaming response.
 
             Usage:
-                This function can be adjusted based on the streaming requirements, speed of 
-                response, or the model being used. Developers can also introduce more sophisticated 
+                This function can be adjusted based on the streaming requirements, speed of
+                response, or the model being used. Developers can also introduce more sophisticated
                 processing steps or modify how tokens are sent back to the client.
             """
             input_ids = tokenizer(text, return_tensors="pt").input_ids.squeeze()
             buffer = []
-            N = 3 # Number of tokens to send back to the client at a time
+            N = 3  # Number of tokens to send back to the client at a time
             for token in model(input_ids):
                 buffer.append(token)
                 # If buffer has N tokens, send them back to the client.
                 if len(buffer) == N:
-                    joined_buffer = ''.join(buffer)
-                    await send({
-                        "type": "http.response.body",
-                        "body": joined_buffer.encode('utf-8'),
-                        "more_body": True
-                    })
+                    joined_buffer = "".join(buffer)
+                    await send(
+                        {
+                            "type": "http.response.body",
+                            "body": joined_buffer.encode("utf-8"),
+                            "more_body": True,
+                        }
+                    )
                     bt.logging.debug(f"Streamed tokens: {joined_buffer}")
                     buffer = []  # Clear the buffer for next batch of tokens
 
             # Send any remaining tokens in the buffer
             if buffer:
-                joined_buffer = ''.join(buffer)
-                await send({
-                    "type": "http.response.body",
-                    "body": joined_buffer.encode('utf-8'),
-                    "more_body": False  # No more tokens to send
-                })
+                joined_buffer = "".join(buffer)
+                await send(
+                    {
+                        "type": "http.response.body",
+                        "body": joined_buffer.encode("utf-8"),
+                        "more_body": False,  # No more tokens to send
+                    }
+                )
                 bt.logging.trace(f"Streamed tokens: {joined_buffer}")
 
         message = synapse.messages[0]
         token_streamer = partial(_prompt, message)
         return synapse.create_streaming_response(token_streamer)
 
+
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
     """
     Entry point for executing the StreamingTemplateMiner.
 
-    This block initializes the StreamingTemplateMiner and runs it, effectively connecting 
-    it to the Bittensor network. Once connected, the miner will continuously listen for 
-    incoming requests from the Bittensor network. For every request, it responds with a 
-    static message processed as per the logic defined in the 'prompt' method of the 
+    This block initializes the StreamingTemplateMiner and runs it, effectively connecting
+    it to the Bittensor network. Once connected, the miner will continuously listen for
+    incoming requests from the Bittensor network. For every request, it responds with a
+    static message processed as per the logic defined in the 'prompt' method of the
     StreamingTemplateMiner class.
 
-    The main loop at the end serves to keep the miner running indefinitely. It periodically 
-    prints a "running..." message to the console, providing a simple indication that the miner 
+    The main loop at the end serves to keep the miner running indefinitely. It periodically
+    prints a "running..." message to the console, providing a simple indication that the miner
     is operational and active.
 
-    Developers looking to extend or customize the miner's behavior can modify the 
-    StreamingTemplateMiner class and its methods. However, this block itself usually 
+    Developers looking to extend or customize the miner's behavior can modify the
+    StreamingTemplateMiner class and its methods. However, this block itself usually
     remains unchanged unless there's a need for specific startup behaviors or configurations.
 
     To start the miner:
-    Simply execute this script. Ensure all dependencies are properly installed and network 
+    Simply execute this script. Ensure all dependencies are properly installed and network
     configurations are correctly set up.
     """
     with StreamingTemplateMiner():
