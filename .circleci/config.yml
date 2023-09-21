@@ -1,0 +1,135 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@2.1.1
+
+jobs:
+  black:
+    resource_class: small
+    parameters:
+      python-version:
+        type: string
+    docker:
+      - image: cimg/python:<< parameters.python-version >>
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          name: Restore cached black venv
+          keys:
+            - v1-pypi-py-black-<< parameters.python-version >>
+
+      - run:
+          name: Update & Activate black venv
+          command: |
+            python -m venv env/
+            . env/bin/activate
+            python -m pip install --upgrade pip
+            pip install black
+
+      - save_cache:
+          name: Save cached black venv
+          paths:
+            - "env/"
+          key: v1-pypi-py-black-<< parameters.python-version >>
+
+      - run:
+          name: Black format check
+          command: |
+            . env/bin/activate
+            python -m black --exclude '(env|venv|.eggs)' --check .
+
+  build-and-test:
+    resource_class: medium
+    parallelism: 2
+    parameters:
+      python-version:
+        type: string
+    docker:
+      - image: cimg/python:<< parameters.python-version >>
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          name: Restore cached venv
+          keys:
+            - v1-pypi-py<< parameters.python-version >>-{{ checksum "requirements.txt" }}
+            - v1-pypi-py<< parameters.python-version >>
+
+      - run:
+          name: Update & Activate venv
+          command: |
+            python -m venv env/
+            . env/bin/activate
+            python -m pip install --upgrade pip
+            pip install .
+
+      - save_cache:
+          name: Save cached venv
+          paths:
+            - "env/"
+          key: v1-pypi-py<< parameters.python-version >>-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: Install subnet1
+          command: |
+            . env/bin/activate
+            pip install -e .
+
+  check-version-updated:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - checkout
+
+      - run:
+          name: Version is updated
+          command: |
+            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep openminers/__init__.py | wc -l) == 1 ]] && echo "openminers/__init__.py has changed"
+            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep VERSION | wc -l) == 1 ]] && echo "VERSION has changed"
+
+  check-changelog-updated:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - checkout
+      - run:
+          name: File CHANGELOG.md is updated
+          command: |
+            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep CHANGELOG.md | wc -l) == 1 ]] && echo "CHANGELOG.md has changed"
+
+  check-version-not-released:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - checkout
+      - run:
+          name: Git tag does not exist for the current version
+          command: |
+            [[ $(git tag | grep `cat VERSION` | wc -l) == 0 ]] && echo "VERSION is not a tag"
+
+
+workflows:
+  pr-requirements:
+    jobs:
+      - black:
+          python-version: "3.8.12"
+      - build-and-test:
+          matrix:
+            parameters:
+              python-version: ["3.8.14", "3.9.13", "3.10.6"]
+
+  release-branches-requirements:
+    jobs:
+      - check-version-updated:
+          filters:
+            branches:
+              only:
+                - /^(release|hotfix)/.*/
+      - check-changelog-updated:
+          filters:
+            branches:
+              only:
+                - /^(release|hotfix)/.*/

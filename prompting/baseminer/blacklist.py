@@ -67,7 +67,7 @@ def default_blacklist(self, synapse: Prompting) -> Union[Tuple[bool, str], bool]
         and synapse.dendrite.hotkey not in self.metagraph.hotkeys
     ):
         return True, "hotkey not registered"
-    
+
     # Check if the key has validator permit
     if self.config.miner.blacklist.force_validator_permit:
         if synapse.dendrite.hotkey in self.metagraph.hotkeys:
