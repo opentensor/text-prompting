@@ -77,7 +77,13 @@ class Prompting(bt.Synapse):
     This example demonstrates how to create an instance of the `Prompting` class, access the
     `roles` and `messages` fields, and update the `completion` field.
 
+    NOTE: All Synapse subclasses mandate that required body fields have an associated {field}_hash value. This is so
+    we can validate the body has not been tampered with during transport.
 
+    For example:
+
+    The `messages` field requires a `messages_hash` string field, and `roles` requires a `roles_hash` string field.
+    These fields cannot be automatically generated and must be present otherwise the Synapse will throw an error.
     """
 
     class Config:
@@ -118,14 +124,14 @@ class Prompting(bt.Synapse):
     messages_hash: str = pydantic.Field(
         "",
         title="Messages Hash",
-        description="Hash of the messages in the Prompting scenario. Immutable.",
+        description="Hash of the messages in the Prompting scenario. Required for body verification and is automatically filled upon creation of requests. Immutable.",
         allow_mutation=False,
     )
 
     roles_hash: str = pydantic.Field(
         "",
         title="Roles Hash",
-        description="Hash of the roles in the Prompting scenario. Immutable.",
+        description="Hash of the roles in the Prompting scenario. Required for body verification and is automatically filled upon creation of requests. Immutable.",
         allow_mutation=False,
     )
 
