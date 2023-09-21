@@ -112,21 +112,35 @@ class StreamingTemplateMiner(Miner):
                 response, or the model being used. Developers can also introduce more sophisticated 
                 processing steps or modify how tokens are sent back to the client.
             """
-            # Simulate model inference
             input_ids = tokenizer(text, return_tensors="pt").input_ids.squeeze()
-            # Iterate over the decoded tokens and send them back to the client.
+            buffer = []
+            N = 3 # Number of tokens to send back to the client at a time
             for token in model(input_ids):
-                # Send token back to the client
-                await send({"type": "http.response.body", "body": (token + '\n').encode('utf-8'), "more_body": True})
-                bt.logging.trace(f"Streamed token: {token}")
-                # Sleep to show the streaming effect
-                await asyncio.sleep(1)
+                buffer.append(token)
+                # If buffer has N tokens, send them back to the client.
+                if len(buffer) == N:
+                    joined_buffer = ''.join(buffer)
+                    await send({
+                        "type": "http.response.body",
+                        "body": joined_buffer.encode('utf-8'),
+                        "more_body": True
+                    })
+                    bt.logging.debug(f"Streamed tokens: {joined_buffer}")
+                    buffer = []  # Clear the buffer for next batch of tokens
+
+            # Send any remaining tokens in the buffer
+            if buffer:
+                joined_buffer = ''.join(buffer)
+                await send({
+                    "type": "http.response.body",
+                    "body": joined_buffer.encode('utf-8'),
+                    "more_body": False  # No more tokens to send
+                })
+                bt.logging.trace(f"Streamed tokens: {joined_buffer}")
 
         message = synapse.messages[0]
-        # Bind the input message to the _prompt function and return the streaming response.
         token_streamer = partial(_prompt, message)
         return synapse.create_streaming_response(token_streamer)
-
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
