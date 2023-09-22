@@ -1,6 +1,6 @@
 git+https://github.com/opentensor/bittensor.git@revolution
 torch
-transformers==4.28.0
+transformers==4.30.0
 wandb==0.15.3
 datasets==2.14.0
 plotly==5.14.1
