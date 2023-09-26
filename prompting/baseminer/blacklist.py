@@ -23,6 +23,7 @@ import bittensor as bt
 from typing import Union, Tuple, Callable
 from prompting.protocol import Prompting
 
+
 # TODO: Move this into the forward call (don't add to the axon/middleware)
 def is_prompt_in_cache(self, synapse: Prompting) -> bool:
     # Hashes prompt
