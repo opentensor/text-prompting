@@ -23,7 +23,7 @@ import bittensor as bt
 from typing import Union, Tuple, Callable
 from prompting.protocol import Prompting
 
-
+# TODO: Move this into the forward call (don't add to the axon/middleware)
 def is_prompt_in_cache(self, synapse: Prompting) -> bool:
     # Hashes prompt
     # Note: Could be improved using a similarity check
@@ -77,9 +77,6 @@ def default_blacklist(self, synapse: Prompting) -> Union[Tuple[bool, str], bool]
                 return True, "validator permit required"
         else:
             return True, "validator permit required, but hotkey not registered"
-
-    if is_prompt_in_cache(self, synapse):
-        return True, "prompt already sent recently"
 
     # request period
     if synapse.dendrite.hotkey in self.request_timestamps:
