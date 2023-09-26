@@ -202,6 +202,20 @@ class StreamPrompting(bt.StreamingSynapse):
         allow_mutation=False,
     )
 
+    messages_hash: str = pydantic.Field(
+        "",
+        title="Messages Hash",
+        description="Hash of the messages in the StreamPrompting scenario. Required for body verification and is automatically filled upon creation of requests. Immutable.",
+        allow_mutation=False,
+    )
+
+    roles_hash: str = pydantic.Field(
+        "",
+        title="Roles Hash",
+        description="Hash of the roles in the StreamPrompting scenario. Required for body verification and is automatically filled upon creation of requests. Immutable.",
+        allow_mutation=False,
+    )
+
     completion: str = pydantic.Field(
         "",
         title="Completion",
