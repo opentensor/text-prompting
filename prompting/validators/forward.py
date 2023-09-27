@@ -87,7 +87,7 @@ async def run_step(
     event = {"name": name}
     start_time = time.time()
     # Get the list of uids to query for this step.
-    uids = get_random_uids(self, k=10, exclude=exclude).to(self.device)
+    uids = get_random_uids(self, k=k, exclude=exclude).to(self.device)
     axons = [self.metagraph.axons[uid] for uid in uids]
     synapse = prompting.protocol.Prompting(roles=["user"], messages=[prompt])
 
