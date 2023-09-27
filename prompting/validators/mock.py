@@ -61,8 +61,8 @@ class MockDendriteResponse:
         status_code = 200
 
     completion = ""
-    return_message = "Success"
-    return_code = "1"
+    status_message = "Success"
+    status_code = "1"
     elapsed_time = 0
     is_success = True
     firewall_prompt = FirewallPrompt()
