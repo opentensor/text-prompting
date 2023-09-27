@@ -21,7 +21,11 @@ import bittensor as bt
 from typing import List
 from .config import RewardModelType
 from .reward import BaseRewardModel
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    NoRepeatNGramLogitsProcessor,
+)
 
 
 class DirectPreferenceRewardModel(BaseRewardModel):
@@ -43,6 +47,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
             trust_remote_code=True,
             torch_dtype=torch.float16,
         ).to(self.device)
+        self.ngram_logit_processor = NoRepeatNGramLogitsProcessor(ngram_size=5)
 
     def reward_single(
         self, prompt: str, completion: str, name: str, with_penalty=True
@@ -94,11 +99,15 @@ class DirectPreferenceRewardModel(BaseRewardModel):
             logits = logits[:, :-1, :]  # [batch_size=1, seq_len-1, vocab_len]
 
             if with_penalty:
-                # Apply penalty for repeated generation
-                for i in range(len(prompt_part) + 1, len(combined) - 1):
-                    logit = logits[:, i, :].clone()
-                    inputs = combined[len(prompt_part) : i].clone()
-                    logits[:, i, :] = self.logit_penalty(input_ids=inputs, logit=logit)
+                org_logit = logits.clone()
+                logits = self.ngram_logit_processor(
+                    combined[len(prompt_part) :].reshape(1, -1).clone(),
+                    logits.permute(0, 2, 1),
+                ).permute(0, 2, 1)
+                # ngram_logit_processor set punished tokens to -inf, resetting them to 10 std below instead
+                logits[logits == -float("Inf")] = (
+                    org_logit.mean() - org_logit.std() * 10
+                )
 
             # Rescale via log(softmax(logits)).
             logits = logits.log_softmax(-1)
@@ -129,20 +138,3 @@ class DirectPreferenceRewardModel(BaseRewardModel):
         ).to(self.device)
         bt.logging.trace(f"DirectPreferenceRewardModel | rewards: {rewards.tolist()}")
         return rewards
-
-    def logit_penalty(
-        self, input_ids: torch.LongTensor, logit: torch.FloatTensor
-    ) -> torch.FloatTensor:
-        # Counts the unique tokens within each generation
-        uniques, counts = input_ids.unique(return_counts=True)
-        score = torch.gather(logit, 1, uniques.unsqueeze(0))
-
-        # if score < 0 then repetition penalty has to be multiplied to reduce the previous token probability
-        score = torch.where(
-            score < 0,
-            score * (self.penalty**counts),
-            score / (self.penalty**counts),
-        )
-
-        logit.scatter_(1, uniques.unsqueeze(0), score.to(logit.dtype))
-        return logit
