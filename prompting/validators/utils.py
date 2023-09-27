@@ -270,7 +270,9 @@ def load_state(self):
                 f"Neuron weights shape {neuron_weights.shape} does not match metagraph n {self.metagraph.n}"
                 "Populating new moving_averaged_scores IDs with zeros"
             )
-            self.moving_averaged_scores[:len(neuron_weights)] = neuron_weights.to(self.device)
+            self.moving_averaged_scores[: len(neuron_weights)] = neuron_weights.to(
+                self.device
+            )
         # Check for nans in saved state dict
         elif not torch.isnan(neuron_weights).any():
             self.moving_averaged_scores = neuron_weights.to(self.device)
