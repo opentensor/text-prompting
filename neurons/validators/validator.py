@@ -188,8 +188,9 @@ class neuron:
         if self.config.neuron.mock_reward_models:
             self.reward_functions = []
             self.reward_weights = []
+            self.blacklist = MockRewardModel(RewardModelType.blacklist.value)
             self.masking_functions = [
-                MockRewardModel(RewardModelType.blacklist.value),
+                self.blacklist,
                 MockRewardModel(RewardModelType.nsfw.value),
             ]
             bt.logging.debug(str(self.reward_functions))

@@ -126,6 +126,9 @@ async def run_step(
 
     # Find the best completion given the rewards vector.
     completions: List[str] = [comp.completion for comp in responses]
+    completion_return_messages: List[str] = [str(comp.return_message) for comp in responses]
+    completion_return_codes: List[str] = [str(comp.return_code) for comp in responses]
+
     best: str = completions[rewards.argmax(dim=0)].strip()
 
     # Get completion times
@@ -156,6 +159,8 @@ async def run_step(
             "uids": uids.tolist(),
             "completions": completions,
             "completion_times": completion_times,
+            "completion_return_messages": completion_return_messages,
+            "completion_return_codes": completion_return_codes,
             "rewards": rewards.tolist(),
             "gating_loss": gating_loss.item(),
             "best": best,
@@ -166,9 +171,9 @@ async def run_step(
     if not self.config.neuron.dont_save_events:
         logger.log("EVENTS", "events", **event)
 
-    # Log the event to wandb.
-    wandb_event = EventSchema.from_dict(event, self.config.neuron.disable_log_rewards)
+    # Log the event to wandb.    
     if not self.config.wandb.off:
+        wandb_event = EventSchema.from_dict(event, self.config.neuron.disable_log_rewards)
         self.wandb.log(asdict(wandb_event))
 
     # Return the event.
