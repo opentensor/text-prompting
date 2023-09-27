@@ -23,7 +23,7 @@ import bittensor as bt
 import traceback
 from typing import Callable, Dict, List, Union
 
-from blacklist import is_prompt_in_cache
+from .blacklist import is_prompt_in_cache
 
 
 def forward(
