@@ -25,6 +25,7 @@ from typing import Callable, Dict, List, Union
 
 from blacklist import is_prompt_in_cache
 
+
 def forward(
     self,
     func: Callable,
