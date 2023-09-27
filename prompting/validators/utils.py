@@ -263,9 +263,18 @@ def load_state(self):
     bt.logging.info("load_state()")
     try:
         state_dict = torch.load(f"{self.config.neuron.full_path}/model.torch")
-        # Check for nans in saved state dict
         neuron_weights = torch.tensor(state_dict["neuron_weights"])
-        if not torch.isnan(neuron_weights).any():
+        # Check to ensure that the size of the neruon weights matches the metagraph size.
+        if neuron_weights.shape != (self.metagraph.n,):
+            bt.logging.warning(
+                f"Neuron weights shape {neuron_weights.shape} does not match metagraph n {self.metagraph.n}"
+                "Populating new moving_averaged_scores IDs with zeros"
+            )
+            self.moving_averaged_scores[: len(neuron_weights)] = neuron_weights.to(
+                self.device
+            )
+        # Check for nans in saved state dict
+        elif not torch.isnan(neuron_weights).any():
             self.moving_averaged_scores = neuron_weights.to(self.device)
         self.hotkeys = state_dict["neuron_hotkeys"]
         bt.logging.success(
