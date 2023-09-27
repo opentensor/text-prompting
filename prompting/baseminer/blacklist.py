@@ -20,15 +20,14 @@ import json
 import wandb
 import hashlib
 import bittensor as bt
-from typing import Union, Tuple, Callable
+from typing import Union, Tuple, Callable, List
 from prompting.protocol import Prompting
 
 
-# TODO: Move this into the forward call (don't add to the axon/middleware)
-def is_prompt_in_cache(self, synapse: Prompting) -> bool:
+def is_prompt_in_cache(self, messages: List[str]) -> bool:
     # Hashes prompt
     # Note: Could be improved using a similarity check
-    prompt = json.dumps(list(synapse.messages))
+    prompt = json.dumps(list(messages))
     prompt_key = hashlib.sha256(prompt.encode()).hexdigest()
     current_block = self.metagraph.block
 
@@ -38,12 +37,12 @@ def is_prompt_in_cache(self, synapse: Prompting) -> bool:
         should_blacklist = True
     else:
         caller_hotkey = synapse.dendrite.hotkey
-        self.prompt_cache[prompt_key] = (caller_hotkey, current_block)
+        self.prompt_cache[prompt_key] = current_block
         should_blacklist = False
 
     # Sanitize cache by removing old entries according to block span
     keys_to_remove = []
-    for key, (_, block) in self.prompt_cache.items():
+    for key, block in self.prompt_cache.items():
         if block + self.config.miner.blacklist.prompt_cache_block_span < current_block:
             keys_to_remove.append(key)
 

@@ -23,6 +23,7 @@ import bittensor as bt
 import traceback
 from typing import Callable, Dict, List, Union
 
+from blacklist import is_prompt_in_cache
 
 def forward(
     self,
@@ -31,6 +32,10 @@ def forward(
     log_data: Dict[str, Union[str, float]] = None,
 ) -> str:
     """Forwards a list of messages to the miner's forward function."""
+
+    # Check prompt cache to see if we should blacklist.
+    if is_prompt_in_cache(self, messages):
+        raise Exception(f"Prompt in cache, rejecting. {messages}")
 
     # Run the subclass forward function.
     try:
