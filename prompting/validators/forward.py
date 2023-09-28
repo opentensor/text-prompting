@@ -163,7 +163,7 @@ async def run_step(
             "uids": uids.tolist(),
             "completions": completions,
             "completion_times": completion_times,
-            "completion_status_message": completion_status_message,
+            "completion_status_messages": completion_status_message,
             "completion_status_codes": completion_status_codes,
             "rewards": rewards.tolist(),
             "gating_loss": gating_loss.item(),
