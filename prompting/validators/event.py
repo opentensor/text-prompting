@@ -27,8 +27,12 @@ from prompting.validators.reward import RewardModelType
 class EventSchema:
     completions: List[str]  # List of completions received for a given prompt
     completion_times: List[float]  # List of completion times for a given prompt
-    completion_status_messages: List[str] # List of completion status messages for a given prompt
-    completion_status_codes: List[str]  # List of completion status codes for a given prompt
+    completion_status_messages: List[
+        str
+    ]  # List of completion status messages for a given prompt
+    completion_status_codes: List[
+        str
+    ]  # List of completion status codes for a given prompt
     name: str  # Prompt type, e.g. 'followup', 'answer'
     block: float  # Current block at given step
     gating_loss: float  # Gating model loss for given step
@@ -145,8 +149,8 @@ class EventSchema:
         return EventSchema(
             completions=event_dict["completions"],
             completion_times=event_dict["completion_times"],
-            completion_status_messages=event_dict['completion_status_messages'],
-            completion_status_codes=event_dict['completion_status_codes'],
+            completion_status_messages=event_dict["completion_status_messages"],
+            completion_status_codes=event_dict["completion_status_codes"],
             name=event_dict["name"],
             block=event_dict["block"],
             gating_loss=event_dict["gating_loss"],

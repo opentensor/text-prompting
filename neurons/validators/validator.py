@@ -303,8 +303,10 @@ class neuron:
         try:
             while True:
                 if not self.wallet.hotkey.ss58_address in self.metagraph.hotkeys:
-                    raise Exception(f"Validator is not registered - hotkey {self.wallet.hotkey.ss58_address} not in metagraph")    
-                
+                    raise Exception(
+                        f"Validator is not registered - hotkey {self.wallet.hotkey.ss58_address} not in metagraph"
+                    )
+
                 bt.logging.info(f"step({self.step}) block({ttl_get_block( self )})")
 
                 # Run multiple forwards.
