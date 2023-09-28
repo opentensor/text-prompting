@@ -188,8 +188,9 @@ class neuron:
         if self.config.neuron.mock_reward_models:
             self.reward_functions = []
             self.reward_weights = []
+            self.blacklist = MockRewardModel(RewardModelType.blacklist.value)
             self.masking_functions = [
-                MockRewardModel(RewardModelType.blacklist.value),
+                self.blacklist,
                 MockRewardModel(RewardModelType.nsfw.value),
             ]
             bt.logging.debug(str(self.reward_functions))
@@ -301,6 +302,11 @@ class neuron:
         checkpoint(self)
         try:
             while True:
+                if not self.wallet.hotkey.ss58_address in self.metagraph.hotkeys:
+                    raise Exception(
+                        f"Validator is not registered - hotkey {self.wallet.hotkey.ss58_address} not in metagraph"
+                    )
+
                 bt.logging.info(f"step({self.step}) block({ttl_get_block( self )})")
 
                 # Run multiple forwards.
@@ -328,10 +334,9 @@ class neuron:
 
                 self.prev_block = ttl_get_block(self)
                 self.step += 1
-
-        except Exception as e:
-            bt.logging.error("Error in training loop", str(e))
-            bt.logging.debug(print_exception(value=e))
+        except Exception as err:
+            bt.logging.error("Error in training loop", str(err))
+            bt.logging.debug(print_exception(type(err), err, err.__traceback__))
 
 
 def main():
