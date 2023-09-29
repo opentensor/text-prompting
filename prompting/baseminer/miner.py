@@ -189,10 +189,11 @@ class Miner(ABC):
             This method is not meant to be called directly but is invoked internally when a request
             is received, and it subsequently calls the `prompt` method of the subclass.
         """
-        if is_prompt_in_cache(self, synapse):
-            raise ValueError(
-                f"Blacklisted: Prompt sent recently in last {self.config.miner.blacklist.prompt_cache_block_span} blocks."
-            )
+        if not self.config.miner.blacklist.prompt_cache_off:
+            if is_prompt_in_cache(self, synapse):
+                raise ValueError(
+                    f"Blacklisted: Prompt sent recently in last {self.config.miner.blacklist.prompt_cache_block_span} blocks."
+                )
         return self.prompt(synapse)
 
     @abstractmethod
