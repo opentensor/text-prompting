@@ -111,7 +111,7 @@ class Miner(ABC):
         # Attach determiners which functions are called when servicing a request.
         bt.logging.info(f"Attaching forward function to axon.")
         self.axon.attach(
-            forward_fn=self.prompt,
+            forward_fn=self._prompt,
             blacklist_fn=self.blacklist,
             priority_fn=self.priority,
         )
@@ -166,7 +166,7 @@ class Miner(ABC):
         """
         ...
 
-    def prompt(self, synapse: Prompting) -> Prompting:
+    def _prompt(self, synapse: Prompting) -> Prompting:
         """
         Wrapper for _prompt() to be defined by the subclass.
         """
@@ -174,10 +174,10 @@ class Miner(ABC):
             raise ValueError(
                 f"Blacklisted: Prompt sent recently in last {self.config.miner.blacklist.prompt_cache_block_span} blocks."
             )
-        return self._prompt(synapse)
+        return self.prompt(synapse)
 
     @abstractmethod
-    def _prompt(self, synapse: Prompting) -> Prompting:
+    def prompt(self, synapse: Prompting) -> Prompting:
         """
         Abstract method to handle and respond to incoming requests to the miner.
 
