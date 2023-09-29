@@ -168,7 +168,26 @@ class Miner(ABC):
 
     def _prompt(self, synapse: Prompting) -> Prompting:
         """
-        Wrapper for _prompt() to be defined by the subclass.
+        A wrapper method around the `prompt` method that will be defined by the subclass.
+
+        This method acts as an intermediary layer to perform pre-processing before calling the
+        actual `prompt` method implemented in the subclass. Specifically, it checks whether a
+        prompt is in cache to avoid reprocessing recent requests. If the prompt is not in the
+        cache, the subclass `prompt` method is called.
+
+        Args:
+            synapse (Prompting): The incoming request object encapsulating the details of the request.
+
+        Returns:
+            Prompting: The response object to be sent back in reply to the incoming request, essentially
+            the filled synapse request object.
+
+        Raises:
+            ValueError: If the prompt is found in the cache indicating it was sent recently.
+
+        Example:
+            This method is not meant to be called directly but is invoked internally when a request
+            is received, and it subsequently calls the `prompt` method of the subclass.
         """
         if is_prompt_in_cache(self, synapse):
             raise ValueError(
@@ -181,10 +200,9 @@ class Miner(ABC):
         """
         Abstract method to handle and respond to incoming requests to the miner.
 
-        Subclasses should implement this method to define how the miner processes
-        incoming requests and what responses should be sent back. The logic can include
-        operations like data processing, validation, or any other computation as required
-        by the specific mining operation.
+        Subclasses should implement this method to define their custom logic for processing and
+        responding to requests. This method is designed to be overridden, and its behavior will
+        be dependent on the specific implementation provided in the subclass.
 
         Args:
             synapse (Prompting): The incoming request object encapsulating the details
@@ -193,6 +211,13 @@ class Miner(ABC):
         Returns:
             Prompting: The response object that should be sent back in reply to the
                 incoming request. This is essentially the filled synapse request object.
+
+        Example:
+            class CustomMiner(Miner):
+                def prompt(self, synapse: Prompting) -> Prompting:
+                    # Custom logic to process and respond to the request.
+                    synapse.completion = "The meaning of life is 42."
+                    return synapse
         """
         ...
 
