@@ -146,7 +146,7 @@ def get_config() -> "bt.Config":
         "--miner.blacklist.prompt_cache_block_span",
         type=int,
         help="Amount of blocks to keep a prompt in cache",
-        default=50,
+        default=7200,
     )
     parser.add_argument(
         "--miner.blacklist.min_request_period",
