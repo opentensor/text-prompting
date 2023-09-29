@@ -93,6 +93,12 @@ These validators are designed to run and update themselves automatically. To run
 This will run **two** PM2 process: one for the validator which is called `text_prompt_validators_main_process` by default (you can change this in `run.sh`), and one for the run.sh script (in step 4, we named it `text_prompt_validators_autoupdate`). The script will check for updates every 30 minutes, if there is an update then it will pull it, install it, restart `text_prompt_validators_main_process` and then restart itself.
 
 
+# More documentation
+See `docs/` directory for instructions on how to run a [miner](docs/running_a_miner.md) or [validator](docs/running_a_validator.md), as well as run on [testnet](docs/running_on_testnet.md) and [mainnet](docs/running_on_mainnet.md).
+
+See `examples/` directory for manually [querying](examples/query_with_validator_key.ipynb) with a validator key, as well as generic [prompting](examples/prompting.ipynb) and [streaming](examples/streaming.ipynb) examples.
+
+
 # Real-time monitoring with wandb integration
 By default, the text prompting validator sends data to wandb, allowing users to monitor running validators and access key metrics in real time, such as:
 - Gating model loss
