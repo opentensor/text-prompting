@@ -32,7 +32,7 @@ import bittensor as bt
 from prompting.protocol import Prompting
 
 from prompting.baseminer.priority import priority
-from prompting.baseminer.blacklist import blacklist
+from prompting.baseminer.blacklist import blacklist, is_prompt_in_cache
 from prompting.baseminer.run import run
 from prompting.baseminer.set_weights import set_weights
 from prompting.baseminer.config import check_config, get_config
@@ -166,8 +166,18 @@ class Miner(ABC):
         """
         ...
 
-    @abstractmethod
     def prompt(self, synapse: Prompting) -> Prompting:
+        """
+        Wrapper for _prompt() to be defined by the subclass.
+        """
+        if is_prompt_in_cache(self, synapse):
+            raise ValueError(
+                f"Blacklisted: Prompt sent recently in last {self.config.miner.blacklist.prompt_cache_block_span} blocks."
+            )
+        return self._prompt(synapse)
+
+    @abstractmethod
+    def _prompt(self, synapse: Prompting) -> Prompting:
         """
         Abstract method to handle and respond to incoming requests to the miner.
 

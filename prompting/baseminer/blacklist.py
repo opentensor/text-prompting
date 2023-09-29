@@ -24,10 +24,10 @@ from typing import Union, Tuple, Callable, List
 from prompting.protocol import Prompting
 
 
-def is_prompt_in_cache(self, messages: List[str]) -> bool:
+def is_prompt_in_cache(self, synapse: Prompting) -> bool:
     # Hashes prompt
     # Note: Could be improved using a similarity check
-    prompt = json.dumps(list(messages))
+    prompt = json.dumps(list(synapse.messages))
     prompt_key = hashlib.sha256(prompt.encode()).hexdigest()
     current_block = self.metagraph.block
 
