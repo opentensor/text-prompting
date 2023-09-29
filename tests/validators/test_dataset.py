@@ -15,31 +15,30 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-from dataclasses import dataclass
-from enum import Enum
+
+import unittest
+from prompting.validators.dataset import Dataset
 
 
-class RewardModelType(Enum):
-    dpo = "dpo_reward_model"
-    rlhf = "rlhf_reward_model"
-    reciprocate = "reciprocate_reward_model"
-    dahoas = "dahoas_reward_model"
-    diversity = "diversity_reward_model"
-    prompt = "prompt_reward_model"
-    blacklist = "blacklist_filter"
-    nsfw = "nsfw_filter"
-    relevance = "relevance_filter"
-    task_validator = "task_validator_filter"
+class DatasetTestCase(unittest.TestCase):
+    def test_next_skips_empty_and_newline_only_strings(self):
+        mock_data = iter([{"text": ""}, {"text": "\n\n"}, {"text": "Non-empty text"}])
+        dataset = Dataset()
+        dataset.openwebtext = mock_data
+        dataset.red_pajama = mock_data
+
+        # Test that __next__ skips empty texts and texts that consist only of newline characters
+        self.assertEqual(dataset.__next__(), {"text": "Non-empty text"})
+
+    def test_next_returns_regular_strings(self):
+        mock_data = iter([{"text": "Non-empty text"}])
+        dataset = Dataset()
+        dataset.openwebtext = mock_data
+        dataset.red_pajama = mock_data
+
+        # Test that __next__ returns a non-empty text
+        self.assertEqual(dataset.__next__(), {"text": "Non-empty text"})
 
 
-@dataclass(frozen=True)
-class DefaultRewardFrameworkConfig:
-    """Reward framework default configuration.
-    Note: All the weights should add up to 1.0.
-    """
-
-    dpo_model_weight: float = 0.3
-    rlhf_model_weight: float = 0.4
-    reciprocate_model_weight: float = 0.3
-    dahoas_model_weight: float = 0
-    prompt_model_weight: float = 0
+if __name__ == "__main__":
+    unittest.main()

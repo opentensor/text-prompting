@@ -15,31 +15,4 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-from dataclasses import dataclass
-from enum import Enum
-
-
-class RewardModelType(Enum):
-    dpo = "dpo_reward_model"
-    rlhf = "rlhf_reward_model"
-    reciprocate = "reciprocate_reward_model"
-    dahoas = "dahoas_reward_model"
-    diversity = "diversity_reward_model"
-    prompt = "prompt_reward_model"
-    blacklist = "blacklist_filter"
-    nsfw = "nsfw_filter"
-    relevance = "relevance_filter"
-    task_validator = "task_validator_filter"
-
-
-@dataclass(frozen=True)
-class DefaultRewardFrameworkConfig:
-    """Reward framework default configuration.
-    Note: All the weights should add up to 1.0.
-    """
-
-    dpo_model_weight: float = 0.3
-    rlhf_model_weight: float = 0.4
-    reciprocate_model_weight: float = 0.3
-    dahoas_model_weight: float = 0
-    prompt_model_weight: float = 0
+from . import validators
