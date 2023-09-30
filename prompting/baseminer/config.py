@@ -169,9 +169,6 @@ def get_config() -> "bt.Config":
         default=0.0,
     )
     parser.add_argument(
-        "--miner.priority.use_s", type=float, help="A multiplier", default=0.0
-    )
-    parser.add_argument(
         "--miner.priority.time_stake_multiplicate",
         type=int,
         help="Time (in minute) it takes to make the stake twice more important in the priority queue",

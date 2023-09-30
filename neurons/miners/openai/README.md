@@ -36,11 +36,11 @@ python3 neurons/miners/openai/miner.py
 usage: miner.py [-h] [--axon.port AXON.PORT] [--subtensor.network SUBTENSOR.NETWORK] [--subtensor.chain_endpoint SUBTENSOR.CHAIN_ENDPOINT] [--netuid NETUID] [--miner.root MINER.ROOT] [--miner.name MINER.NAME]
                 [--miner.blocks_per_epoch MINER.BLOCKS_PER_EPOCH] [--miner.blacklist.blacklist [MINER.BLACKLIST.BLACKLIST ...]] [--miner.blacklist.whitelist [MINER.BLACKLIST.WHITELIST ...]]
                 [--miner.blacklist.force_validator_permit] [--miner.blacklist.allow_non_registered] [--miner.blacklist.minimum_stake_requirement MINER.BLACKLIST.MINIMUM_STAKE_REQUIREMENT]
-                [--miner.blacklist.prompt_cache_block_span MINER.BLACKLIST.PROMPT_CACHE_BLOCK_SPAN] [--miner.blacklist.min_request_period MINER.BLACKLIST.MIN_REQUEST_PERIOD] [--miner.priority.default MINER.PRIORITY.DEFAULT]
-                [--miner.priority.use_s MINER.PRIORITY.USE_S] [--miner.priority.time_stake_multiplicate MINER.PRIORITY.TIME_STAKE_MULTIPLICATE] [--miner.priority.len_request_timestamps MINER.PRIORITY.LEN_REQUEST_TIMESTAMPS]
-                [--miner.no_set_weights] [--miner.no_serve] [--miner.no_start_axon] [--miner.no_register] [--miner.mock_subtensor] [--wandb.on] [--wandb.project_name WANDB.PROJECT_NAME] [--wandb.entity WANDB.ENTITY]
-                [--logging.debug] [--logging.trace] [--logging.record_log] [--logging.logging_dir LOGGING.LOGGING_DIR] [--wallet.name WALLET.NAME] [--wallet.hotkey WALLET.HOTKEY] [--wallet.path WALLET.PATH] [--config CONFIG]
-                [--strict] [--no_version_checking] [--no_prompt]
+                [--miner.blacklist.prompt_cache_block_span MINER.BLACKLIST.PROMPT_CACHE_BLOCK_SPAN] [--miner.blacklist.use_prompt_cache] [--miner.blacklist.min_request_period MINER.BLACKLIST.MIN_REQUEST_PERIOD]
+                [--miner.priority.default MINER.PRIORITY.DEFAULT] [--miner.priority.time_stake_multiplicate MINER.PRIORITY.TIME_STAKE_MULTIPLICATE]
+                [--miner.priority.len_request_timestamps MINER.PRIORITY.LEN_REQUEST_TIMESTAMPS] [--miner.no_set_weights] [--miner.no_serve] [--miner.no_start_axon] [--miner.no_register] [--miner.mock_subtensor] [--wandb.on]
+                [--wandb.project_name WANDB.PROJECT_NAME] [--wandb.entity WANDB.ENTITY] [--logging.debug] [--logging.trace] [--logging.record_log] [--logging.logging_dir LOGGING.LOGGING_DIR] [--wallet.name WALLET.NAME]
+                [--wallet.hotkey WALLET.HOTKEY] [--wallet.path WALLET.PATH] [--config CONFIG] [--strict] [--no_version_checking] [--no_prompt]
 
 options:
   -h, --help            show this help message and exit
@@ -69,12 +69,12 @@ options:
                         Minimum stake requirement
   --miner.blacklist.prompt_cache_block_span MINER.BLACKLIST.PROMPT_CACHE_BLOCK_SPAN
                         Amount of blocks to keep a prompt in cache
+  --miner.blacklist.use_prompt_cache
+                        If True, the miner will use the prompt cache to store recent request prompts.
   --miner.blacklist.min_request_period MINER.BLACKLIST.MIN_REQUEST_PERIOD
                         Time period (in minute) to serve a maximum of 50 requests for each hotkey
   --miner.priority.default MINER.PRIORITY.DEFAULT
                         Default priority of non-registered requests
-  --miner.priority.use_s MINER.PRIORITY.USE_S
-                        A multiplier
   --miner.priority.time_stake_multiplicate MINER.PRIORITY.TIME_STAKE_MULTIPLICATE
                         Time (in minute) it takes to make the stake twice more important in the priority queue
   --miner.priority.len_request_timestamps MINER.PRIORITY.LEN_REQUEST_TIMESTAMPS
