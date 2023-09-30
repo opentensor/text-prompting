@@ -44,7 +44,10 @@ async def is_prompt_in_cache(self, synapse: Prompting) -> bool:
         # Sanitize cache by removing old entries according to block span
         keys_to_remove = []
         for key, block in self.prompt_cache.items():
-            if block + self.config.miner.blacklist.prompt_cache_block_span < current_block:
+            if (
+                block + self.config.miner.blacklist.prompt_cache_block_span
+                < current_block
+            ):
                 keys_to_remove.append(key)
 
         for key in keys_to_remove:
