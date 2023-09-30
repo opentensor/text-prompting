@@ -20,6 +20,7 @@ import os
 import copy
 import time
 import wandb
+import asyncio
 import argparse
 import pydantic
 import threading
@@ -133,7 +134,7 @@ class Miner(ABC):
         self.should_exit: bool = False
         self.is_running: bool = False
         self.thread: threading.Thread = None
-
+        self.lock = asyncio.Lock()
         self.request_timestamps: Dict = {}
 
     @abstractmethod
@@ -189,10 +190,10 @@ class Miner(ABC):
             This method is not meant to be called directly but is invoked internally when a request
             is received, and it subsequently calls the `prompt` method of the subclass.
         """
-        if not self.config.miner.blacklist.prompt_cache_off:
+        if self.config.miner.blacklist.use_prompt_cache:
             if is_prompt_in_cache(self, synapse):
                 raise ValueError(
-                    f"Blacklisted: Prompt sent recently in last {self.config.miner.blacklist.prompt_cache_block_span} blocks."
+                    f"Blacklisted: Prompt {synapse.messages} sent recently in last {self.config.miner.blacklist.prompt_cache_block_span} blocks."
                 )
         return self.prompt(synapse)
 
