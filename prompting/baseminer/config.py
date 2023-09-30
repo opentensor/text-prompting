@@ -150,7 +150,6 @@ def get_config() -> "bt.Config":
     )
     parser.add_argument(
         "--miner.blacklist.prompt_cache_off",
-        type=bool,
         action="store_true",
         help="If True, the miner will not use the prompt cache",
         default=False,
