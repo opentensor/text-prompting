@@ -148,7 +148,7 @@ def get_config() -> "bt.Config":
         help="Amount of blocks to keep a prompt in cache",
         default=7200,
     )
-    parse.add_argument(
+    parser.add_argument(
         "--miner.blacklist.prompt_cache_off",
         type=bool,
         action="store_true",
