@@ -20,6 +20,7 @@ import os
 import copy
 import time
 import wandb
+import asyncio
 import argparse
 import pydantic
 import threading
@@ -32,7 +33,7 @@ import bittensor as bt
 from prompting.protocol import Prompting
 
 from prompting.baseminer.priority import priority
-from prompting.baseminer.blacklist import blacklist
+from prompting.baseminer.blacklist import blacklist, is_prompt_in_cache
 from prompting.baseminer.run import run
 from prompting.baseminer.set_weights import set_weights
 from prompting.baseminer.config import check_config, get_config
@@ -111,7 +112,7 @@ class Miner(ABC):
         # Attach determiners which functions are called when servicing a request.
         bt.logging.info(f"Attaching forward function to axon.")
         self.axon.attach(
-            forward_fn=self.prompt,
+            forward_fn=self._prompt,
             blacklist_fn=self.blacklist,
             priority_fn=self.priority,
         )
@@ -133,7 +134,7 @@ class Miner(ABC):
         self.should_exit: bool = False
         self.is_running: bool = False
         self.thread: threading.Thread = None
-
+        self.lock = asyncio.Lock()
         self.request_timestamps: Dict = {}
 
     @abstractmethod
@@ -166,15 +167,44 @@ class Miner(ABC):
         """
         ...
 
+    def _prompt(self, synapse: Prompting) -> Prompting:
+        """
+        A wrapper method around the `prompt` method that will be defined by the subclass.
+
+        This method acts as an intermediary layer to perform pre-processing before calling the
+        actual `prompt` method implemented in the subclass. Specifically, it checks whether a
+        prompt is in cache to avoid reprocessing recent requests. If the prompt is not in the
+        cache, the subclass `prompt` method is called.
+
+        Args:
+            synapse (Prompting): The incoming request object encapsulating the details of the request.
+
+        Returns:
+            Prompting: The response object to be sent back in reply to the incoming request, essentially
+            the filled synapse request object.
+
+        Raises:
+            ValueError: If the prompt is found in the cache indicating it was sent recently.
+
+        Example:
+            This method is not meant to be called directly but is invoked internally when a request
+            is received, and it subsequently calls the `prompt` method of the subclass.
+        """
+        if self.config.miner.blacklist.use_prompt_cache:
+            if is_prompt_in_cache(self, synapse):
+                raise ValueError(
+                    f"Blacklisted: Prompt {synapse.messages} sent recently in last {self.config.miner.blacklist.prompt_cache_block_span} blocks."
+                )
+        return self.prompt(synapse)
+
     @abstractmethod
     def prompt(self, synapse: Prompting) -> Prompting:
         """
         Abstract method to handle and respond to incoming requests to the miner.
 
-        Subclasses should implement this method to define how the miner processes
-        incoming requests and what responses should be sent back. The logic can include
-        operations like data processing, validation, or any other computation as required
-        by the specific mining operation.
+        Subclasses should implement this method to define their custom logic for processing and
+        responding to requests. This method is designed to be overridden, and its behavior will
+        be dependent on the specific implementation provided in the subclass.
 
         Args:
             synapse (Prompting): The incoming request object encapsulating the details
@@ -183,6 +213,13 @@ class Miner(ABC):
         Returns:
             Prompting: The response object that should be sent back in reply to the
                 incoming request. This is essentially the filled synapse request object.
+
+        Example:
+            class CustomMiner(Miner):
+                def prompt(self, synapse: Prompting) -> Prompting:
+                    # Custom logic to process and respond to the request.
+                    synapse.completion = "The meaning of life is 42."
+                    return synapse
         """
         ...
 

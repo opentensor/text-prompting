@@ -18,7 +18,6 @@
 
 from . import blacklist
 from . import config
-from . import forward
 from . import miner
 from . import mock
 from . import priority

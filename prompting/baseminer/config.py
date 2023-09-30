@@ -146,7 +146,13 @@ def get_config() -> "bt.Config":
         "--miner.blacklist.prompt_cache_block_span",
         type=int,
         help="Amount of blocks to keep a prompt in cache",
-        default=50,
+        default=7200,
+    )
+    parser.add_argument(
+        "--miner.blacklist.use_prompt_cache",
+        action="store_true",
+        help="If True, the miner will use the prompt cache to store recent request prompts.",
+        default=False,
     )
     parser.add_argument(
         "--miner.blacklist.min_request_period",
@@ -161,9 +167,6 @@ def get_config() -> "bt.Config":
         type=float,
         help="Default priority of non-registered requests",
         default=0.0,
-    )
-    parser.add_argument(
-        "--miner.priority.use_s", type=float, help="A multiplier", default=0.0
     )
     parser.add_argument(
         "--miner.priority.time_stake_multiplicate",

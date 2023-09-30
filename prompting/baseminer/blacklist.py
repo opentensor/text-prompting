@@ -20,34 +20,38 @@ import json
 import wandb
 import hashlib
 import bittensor as bt
-from typing import Union, Tuple, Callable
+from typing import Union, Tuple, Callable, List
 from prompting.protocol import Prompting
 
 
-def is_prompt_in_cache(self, synapse: Prompting) -> bool:
+async def is_prompt_in_cache(self, synapse: Prompting) -> bool:
     # Hashes prompt
     # Note: Could be improved using a similarity check
-    prompt = json.dumps(list(synapse.messages))
-    prompt_key = hashlib.sha256(prompt.encode()).hexdigest()
-    current_block = self.metagraph.block
+    async with self.lock:
+        prompt = json.dumps(list(synapse.messages))
+        prompt_key = hashlib.sha256(prompt.encode()).hexdigest()
+        current_block = self.metagraph.block
 
-    should_blacklist: bool
-    # Check if prompt is in cache, if not add it
-    if prompt_key in self.prompt_cache:
-        should_blacklist = True
-    else:
-        caller_hotkey = synapse.dendrite.hotkey
-        self.prompt_cache[prompt_key] = (caller_hotkey, current_block)
-        should_blacklist = False
+        should_blacklist: bool
+        # Check if prompt is in cache, if not add it
+        if prompt_key in self.prompt_cache:
+            should_blacklist = True
+        else:
+            caller_hotkey = synapse.dendrite.hotkey
+            self.prompt_cache[prompt_key] = current_block
+            should_blacklist = False
 
-    # Sanitize cache by removing old entries according to block span
-    keys_to_remove = []
-    for key, (_, block) in self.prompt_cache.items():
-        if block + self.config.miner.blacklist.prompt_cache_block_span < current_block:
-            keys_to_remove.append(key)
+        # Sanitize cache by removing old entries according to block span
+        keys_to_remove = []
+        for key, block in self.prompt_cache.items():
+            if (
+                block + self.config.miner.blacklist.prompt_cache_block_span
+                < current_block
+            ):
+                keys_to_remove.append(key)
 
-    for key in keys_to_remove:
-        del self.prompt_cache[key]
+        for key in keys_to_remove:
+            del self.prompt_cache[key]
 
     return should_blacklist
 
@@ -77,9 +81,6 @@ def default_blacklist(self, synapse: Prompting) -> Union[Tuple[bool, str], bool]
                 return True, "validator permit required"
         else:
             return True, "validator permit required, but hotkey not registered"
-
-    if is_prompt_in_cache(self, synapse):
-        return True, "prompt already sent recently"
 
     # request period
     if synapse.dendrite.hotkey in self.request_timestamps:
