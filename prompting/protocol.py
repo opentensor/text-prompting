@@ -39,6 +39,7 @@ class Prompting(bt.Synapse):
         roles (List[str]): A list of roles in the prompting scenario. This field is both mandatory and immutable.
         messages (List[str]): A list of messages in the prompting scenario. This field is both mandatory and immutable.
         completion (str): A string that captures completion of the prompt. This field is mutable.
+        required_hash_fields List[str]: A list of fields that are required for the hash.
 
     Methods:
         deserialize() -> "Prompting": Returns the instance of the current object.
@@ -119,6 +120,13 @@ class Prompting(bt.Synapse):
         description="Completion status of the current Prompting object. This attribute is mutable and can be updated.",
     )
 
+    required_hash_fields: List[str] = pydantic.Field(
+        ["messages"],
+        title="Required Hash Fields",
+        description="A list of required fields for the hash.",
+        allow_mutation=False,
+    )
+
 
 class StreamPrompting(bt.StreamingSynapse):
     """
@@ -141,6 +149,7 @@ class StreamPrompting(bt.StreamingSynapse):
     - `completion` (str): Stores the processed result of the streaming tokens. As tokens are streamed, decoded, and
                           processed, they are accumulated in the completion attribute. This represents the "final"
                           product or result of the streaming process.
+    - `required_hash_fields` (List[str]): A list of fields that are required for the hash.
 
     Methods:
     - `process_streaming_response`: This method asynchronously processes the incoming streaming response by decoding
@@ -177,6 +186,13 @@ class StreamPrompting(bt.StreamingSynapse):
         ...,
         title="Messages",
         description="A list of messages in the Prompting scenario. Immutable.",
+        allow_mutation=False,
+    )
+
+    required_hash_fields: List[str] = pydantic.Field(
+        ["messages"],
+        title="Required Hash Fields",
+        description="A list of required fields for the hash.",
         allow_mutation=False,
     )
 
