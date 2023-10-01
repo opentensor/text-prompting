@@ -119,6 +119,13 @@ class Prompting(bt.Synapse):
         description="Completion status of the current Prompting object. This attribute is mutable and can be updated.",
     )
 
+    required_hash_fields: List[str] = pydantic.Field(
+        ["messages"],
+        title="Required Hash Fields",
+        description="A list of required fields for the hash.",
+        allow_mutation=False,
+    )
+
 
 class StreamPrompting(bt.StreamingSynapse):
     """
