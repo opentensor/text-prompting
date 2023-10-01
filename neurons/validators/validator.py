@@ -151,7 +151,7 @@ class neuron:
             bt.logging.debug("serving ip to chain...")
             try:
                 axon = bt.axon(
-                    wallet=self.wallet, metagraph=self.metagraph, config=self.config
+                    wallet=self.wallet, config=self.config
                 )
 
                 try:
