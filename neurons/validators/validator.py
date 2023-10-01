@@ -158,8 +158,6 @@ class neuron:
                     self.subtensor.serve_axon(
                         netuid=self.config.netuid,
                         axon=axon,
-                        use_upnpc=False,
-                        wait_for_finalization=True,
                     )
                 except Exception as e:
                     bt.logging.error(f"Failed to serve Axon with exception: {e}")
