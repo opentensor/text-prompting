@@ -177,7 +177,7 @@ def add_args(cls, parser):
         # Note: the validator needs to serve an Axon with their IP or they may
         #   be blacklisted by the firewall of serving peers on the network.
         help="Set this flag to not attempt to serve an Axon.",
-        default=True,
+        default=False,
     )
 
     parser.add_argument(
