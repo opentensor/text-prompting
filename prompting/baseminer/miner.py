@@ -167,7 +167,7 @@ class Miner(ABC):
         """
         ...
 
-    def _prompt(self, synapse: Prompting) -> Prompting:
+    async def _prompt(self, synapse: Prompting) -> Prompting:
         """
         A wrapper method around the `prompt` method that will be defined by the subclass.
 
@@ -198,7 +198,7 @@ class Miner(ABC):
         return self.prompt(synapse)
 
     @abstractmethod
-    def prompt(self, synapse: Prompting) -> Prompting:
+    async def prompt(self, synapse: Prompting) -> Prompting:
         """
         Abstract method to handle and respond to incoming requests to the miner.
 

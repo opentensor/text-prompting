@@ -126,7 +126,7 @@ class OpenAIMiner(Miner):
             self.wandb_run.tags = self.wandb_run.tags + ("openai_miner",)
         openai.api_key = api_key
 
-    def prompt(self, synapse: Prompting) -> Prompting:
+    async def prompt(self, synapse: Prompting) -> Prompting:
         """
         Overrides the Miner's abstract `prompt` method to process incoming requests using OpenAI.
 

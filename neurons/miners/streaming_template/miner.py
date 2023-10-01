@@ -66,7 +66,7 @@ class StreamingTemplateMiner(Miner):
         """
         pass
 
-    def prompt(self, synapse: StreamPrompting) -> StreamPrompting:
+    async def prompt(self, synapse: StreamPrompting) -> StreamPrompting:
         """
         Generates a streaming response for the provided synapse.
 

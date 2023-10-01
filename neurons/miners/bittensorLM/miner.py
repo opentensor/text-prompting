@@ -214,7 +214,7 @@ class CerebrasBTLMMiner(Miner):
                 processed_history += "user: " + message + "\n"
         return processed_history
 
-    def prompt(self, synapse: Prompting) -> Prompting:
+    async def prompt(self, synapse: Prompting) -> Prompting:
         """
         Processes incoming requests using the BTLM model.
 

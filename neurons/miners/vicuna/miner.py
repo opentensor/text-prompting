@@ -151,7 +151,7 @@ class VicunaMiner(Miner):
                 processed_history += "USER: " + message.strip() + " "
         return processed_history
 
-    def prompt(self, synapse: Prompting) -> Prompting:
+    async def prompt(self, synapse: Prompting) -> Prompting:
         """
         Given a Synapse object with message history, prompts the Vicuna model for a completion.
 

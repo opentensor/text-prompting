@@ -61,7 +61,7 @@ class TemplateMiner(Miner):
         """
         pass
 
-    def prompt(self, synapse: Prompting) -> Prompting:
+    async def prompt(self, synapse: Prompting) -> Prompting:
         """
         Handles incoming requests and provides a static response.
 
