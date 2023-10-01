@@ -150,9 +150,7 @@ class neuron:
         if not self.config.neuron.axon_off:
             bt.logging.debug("serving ip to chain...")
             try:
-                axon = bt.axon(
-                    wallet=self.wallet, config=self.config
-                )
+                axon = bt.axon(wallet=self.wallet, config=self.config)
 
                 try:
                     self.subtensor.serve_axon(
