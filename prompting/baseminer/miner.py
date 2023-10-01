@@ -223,7 +223,7 @@ class Miner(ABC):
         """
         ...
 
-    def blacklist(self, synapse: Prompting) -> Tuple[bool, str]:
+    async def blacklist(self, synapse: Prompting) -> Tuple[bool, str]:
         """
         Default blacklist logic
 
@@ -246,7 +246,7 @@ class Miner(ABC):
 
         return blacklist(self, _blacklist, synapse)
 
-    def priority(self, synapse: Prompting) -> float:
+    async def priority(self, synapse: Prompting) -> float:
         """
         Define how miners should prioritize requests.
 
