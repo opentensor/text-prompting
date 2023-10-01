@@ -115,6 +115,7 @@ class Miner(ABC):
             forward_fn=self._prompt,
             blacklist_fn=self.blacklist,
             priority_fn=self.priority,
+            required_hash_fields=["messages"],
         )
         bt.logging.info(f"Axon created: {self.axon}")
 
