@@ -128,7 +128,8 @@ def resync_metagraph(self: "validators.neuron.neuron"):
         if len(self.hotkeys) < len(self.metagraph.hotkeys):
             # Update the size of the moving average scores.
             new_moving_average = torch.zeros((self.metagraph.n)).to(self.device)
-            new_moving_average[: len(self.hotkeys)] = self.moving_averaged_scores
+            min_len = min(len(self.hotkeys), len(self.moving_averaged_scores))
+            new_moving_average[:min_len] = self.moving_averaged_scores[:min_len]
             self.moving_averaged_scores = new_moving_average
 
         # Resize the gating model.
