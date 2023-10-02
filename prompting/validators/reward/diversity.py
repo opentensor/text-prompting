@@ -130,9 +130,9 @@ class DiversityRewardModel(BaseRewardModel):
 
         # Reward to be at the bottom_k smallest of the 1 - similarity score.
         bottom_k = min(self.history_reward_bottom_k, len(similarity))
-        rewards = torch.topk(
-            (1 - torch.abs(similarity)), bottom_k, largest=False
-        )[0][:, -1]
+        rewards = torch.topk((1 - torch.abs(similarity)), bottom_k, largest=False)[0][
+            :, -1
+        ]
 
         return regularise(rewards)
 
@@ -146,9 +146,9 @@ class DiversityRewardModel(BaseRewardModel):
 
         # Reward to be at the 10% quantile of the 1 - similarity score.
         bottom_k = min(self.reward_bottom_k, len(similarity))
-        rewards = torch.topk(
-            (1 - torch.abs(similarity)), bottom_k, largest=False
-        )[0][:, -1]
+        rewards = torch.topk((1 - torch.abs(similarity)), bottom_k, largest=False)[0][
+            :, -1
+        ]
 
         return regularise(rewards)
 
