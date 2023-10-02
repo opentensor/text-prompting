@@ -96,7 +96,7 @@ def run(self):
 
             metagraph = self.subtensor.metagraph(
                 netuid=self.config.netuid,
-                lite=False,
+                lite=True,
                 sync=True,
                 block=self.last_epoch_block,
             )
