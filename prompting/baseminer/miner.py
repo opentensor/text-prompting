@@ -193,7 +193,7 @@ class Miner(ABC):
         if self.config.miner.blacklist.use_prompt_cache:
             if is_prompt_in_cache(self, synapse):
                 raise ValueError(
-                    f"Blacklisted: Prompt {synapse.messages} sent recently in last {self.config.miner.blacklist.prompt_cache_block_span} blocks."
+                    f"Blacklisted: Prompt sent recently in last {self.config.miner.blacklist.prompt_cache_block_span} blocks."
                 )
         return self.prompt(synapse)
 
