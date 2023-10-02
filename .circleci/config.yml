@@ -87,7 +87,7 @@ jobs:
       - run:
           name: Version is updated
           command: |
-            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep openminers/__init__.py | wc -l) == 1 ]] && echo "openminers/__init__.py has changed"
+            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep prompting/__init__.py | wc -l) == 1 ]] && echo "prompting/__init__.py has changed"
             [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep VERSION | wc -l) == 1 ]] && echo "VERSION has changed"
 
   check-changelog-updated:
