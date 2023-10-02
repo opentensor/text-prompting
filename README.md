@@ -46,7 +46,28 @@ python -m pip install -r requirements.txt
 
 ---
 
-Once you have installed this repo, you can run the miner and validator with the following commands.
+# Setup
+
+Before you are able to run a miner or a validator, you must create a wallet then register it with [bittensor-cli](https://github.com/opentensor/docs/blob/main/reference/btcli.md).
+```bash
+# To create a wallet
+$ btcli wallet new_coldkey --wallet.name my_coldkey
+#You will then be given a mnemonic and asked to enter a password. It is recommended to save these offline.
+
+$ btcli wallet new_hotkey --wallet.name my_coldkey --wallet.hotkey my_first_hotkey
+# You will once again be given a mnemonic that you should save offline.
+```
+
+```bash
+# To register your wallet on the test subnet
+btcli subnet register
+      --netuid 8
+      --subtensor.network test 
+      --wallet.name my_coldkey
+      --wallet.hotkey my_first_hotkey
+```
+
+Once you have installed this repo and have a registered wallet, you can run the miner and validator with the following commands.
 ```bash
 # To run the miner
 python -m neurons/miners/bittensorLM/miner.py 
