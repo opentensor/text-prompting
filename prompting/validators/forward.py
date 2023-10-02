@@ -127,10 +127,10 @@ async def run_step(
     # Find the best completion given the rewards vector.
     completions: List[str] = [comp.completion for comp in responses]
     completion_status_message: List[str] = [
-        str(comp.dendrite.status_code) for comp in responses
+        str(comp.dendrite.status_message) for comp in responses
     ]
     completion_status_codes: List[str] = [
-        str(comp.dendrite.status_message) for comp in responses
+        str(comp.dendrite.status_code) for comp in responses
     ]
 
     best: str = completions[rewards.argmax(dim=0)].strip()
