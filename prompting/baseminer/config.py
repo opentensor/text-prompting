@@ -80,7 +80,7 @@ def get_config() -> "bt.Config":
     # Chain endpoint to connect to
     parser.add_argument(
         "--subtensor.chain_endpoint",
-        default="wss://test.finney.opentensor.ai:443",
+        default="wss://entrypoint-finney.opentensor.ai:443",
         help="Chain endpoint to connect to.",
     )
     # Adds override arguments for network and netuid.
