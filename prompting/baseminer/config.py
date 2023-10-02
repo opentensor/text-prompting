@@ -74,7 +74,7 @@ def get_config() -> "bt.Config":
     # Subtensor network to connect to
     parser.add_argument(
         "--subtensor.network",
-        default="test",
+        default="finney",
         help="Bittensor network to connect to.",
     )
     # Chain endpoint to connect to
