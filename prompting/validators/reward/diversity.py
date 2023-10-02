@@ -22,7 +22,6 @@ from typing import List
 from .config import RewardModelType
 from .reward import BaseRewardModel
 from transformers import AutoTokenizer, AutoModel
-import bittensor
 
 from torchmetrics.functional import pairwise_cosine_similarity
 
