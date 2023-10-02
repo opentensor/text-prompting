@@ -22,6 +22,7 @@ from typing import List
 from .config import RewardModelType
 from .reward import BaseRewardModel
 from transformers import AutoTokenizer, AutoModel
+import bittensor
 
 from torchmetrics.functional import pairwise_cosine_similarity
 
@@ -129,8 +130,9 @@ class DiversityRewardModel(BaseRewardModel):
         )
 
         # Reward to be at the bottom_k smallest of the 1 - similarity score.
+        bottom_k = min(self.history_reward_bottom_k, len(similarity))
         rewards = torch.topk(
-            (1 - torch.abs(similarity)), self.history_reward_bottom_k, largest=False
+            (1 - torch.abs(similarity)), bottom_k, largest=False
         )[0][:, -1]
 
         return regularise(rewards)
@@ -144,8 +146,9 @@ class DiversityRewardModel(BaseRewardModel):
         similarity = pairwise_cosine_similarity(embeddings, embeddings)
 
         # Reward to be at the 10% quantile of the 1 - similarity score.
+        bottom_k = min(self.reward_bottom_k, len(similarity))
         rewards = torch.topk(
-            (1 - torch.abs(similarity)), self.reward_bottom_k, largest=False
+            (1 - torch.abs(similarity)), bottom_k, largest=False
         )[0][:, -1]
 
         return regularise(rewards)
