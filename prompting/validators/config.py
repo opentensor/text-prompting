@@ -148,7 +148,7 @@ def add_args(cls, parser):
         "--neuron.checkpoint_block_length",
         type=int,
         help="Blocks before a checkpoint is saved.",
-        default=10,
+        default=100,
     )
     parser.add_argument(
         "--neuron.events_retention_size",
