@@ -95,7 +95,10 @@ def run(self):
             self.last_epoch_block = self.subtensor.get_current_block()
 
             metagraph = self.subtensor.metagraph(
-                netuid=self.config.netuid, lite=False, block=self.last_epoch_block
+                netuid=self.config.netuid,
+                lite=False,
+                sync=True,
+                block=self.last_epoch_block,
             )
             log = (
                 f"Step:{step} | "
