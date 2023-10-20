@@ -185,12 +185,15 @@ class neuron:
             self.reward_functions = []
             self.reward_weights = []
             self.blacklist = MockRewardModel(RewardModelType.blacklist.value)
+            self.diversity_model = MockRewardModel(RewardModelType.diversity.value)
             self.masking_functions = [
                 self.blacklist,
                 MockRewardModel(RewardModelType.nsfw.value),
             ]
+            self.penalty_functions = [
+                self.diversity_model
+            ]
             bt.logging.debug(str(self.reward_functions))
-            self.blacklist = MockRewardModel(RewardModelType.blacklist.value)
         else:
             self.reward_weights = torch.tensor(
                 [
@@ -255,11 +258,6 @@ class neuron:
                 if not self.config.neuron.relevance_off
                 else MockRewardModel(RewardModelType.relevance.value)
             )
-            self.diversity_model = (
-                DiversityRewardModel(device=self.device)
-                if not self.config.neuron.diversity_off
-                else MockRewardModel(RewardModelType.diversity.value)
-            )
             nsfw_model = (
                 NSFWRewardModel(device=self.device)
                 if not self.config.neuron.nsfw_off
@@ -273,8 +271,18 @@ class neuron:
                 self.diversity_model,
                 nsfw_model,
             ]
+
+            # Penalty functions
+            self.diversity_model = (
+                DiversityRewardModel(device=self.device)
+                if not self.config.neuron.diversity_off
+                else MockRewardModel(RewardModelType.diversity.value)
+            )
+            self.penalty_functions = [ self.diversity_model ]
+
             bt.logging.debug(str(self.reward_functions))
             bt.logging.debug(str(self.masking_functions))
+            bt.logging.debug(str(self.penalty_functions))
 
         # Init the event loop.
         self.loop = asyncio.get_event_loop()
