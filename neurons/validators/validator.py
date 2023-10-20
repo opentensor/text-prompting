@@ -268,7 +268,6 @@ class neuron:
                 self.blacklist,
                 task_validator,
                 relevance_model,
-                self.diversity_model,
                 nsfw_model,
             ]
 

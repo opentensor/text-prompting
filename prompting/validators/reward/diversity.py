@@ -177,4 +177,18 @@ class DiversityRewardModel(BaseRewardModel):
             return batch_rewards
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
-        return rewards
+        normalized_rewards = rewards.clone()
+                
+        # Suspiciously high diversity intervals: [0.98 : 1]; Penalize by 20%
+        suspicious_high_diversity_mask = (rewards >= 0.98) & (rewards <= 1)
+        normalized_rewards[suspicious_high_diversity_mask] = rewards[suspicious_high_diversity_mask] * 0.8 
+        
+        # Moderate diversity intervals: [0.2 : 0.6]; Penalize by 10%
+        low_diversity_mask = (rewards >= 0.2) & (rewards < 0.6)
+        normalized_rewards[low_diversity_mask] = rewards[low_diversity_mask] * 0.9
+        
+        # Extremely low diversity intervals: [0 : 0.2]; Penalize by 80%
+        extremely_low_diversity_mask = (rewards >= 0) & (rewards < 0.2)
+        normalized_rewards[extremely_low_diversity_mask] = rewards[extremely_low_diversity_mask] * 0.2
+        
+        return normalized_rewards
