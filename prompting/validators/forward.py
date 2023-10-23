@@ -97,6 +97,20 @@ async def run_step(
         synapse=synapse,
         timeout=timeout,
     )
+    # Restrict the format of acceptable followup completions.
+    for response in responses:
+        # remove leading and trailing periods
+        completion = response.completion.strip('.')
+        if 'followup' in name and len(completion)>0:
+            if '?' in completion:
+                # take first question that is found and only use the sentence before the question mark
+                completion = completion.split('?')[0].split('.')[-1]
+            else:
+                # otherwise take the last sentence
+                completion = completion.split('.')[-1].split('.')[-1]
+
+            response.completion = completion.strip() + '?'
+
 
     # Compute the rewards for the responses given the prompt.
     rewards: torch.FloatTensor = torch.zeros(len(responses), dtype=torch.float32).to(
