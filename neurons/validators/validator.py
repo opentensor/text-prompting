@@ -52,7 +52,6 @@ from prompting.validators.reward import (
     OpenAssistantRewardModel,
     ReciprocateRewardModel,
     RelevanceRewardModel,
-    MockRewardModel,
     DahoasRewardModel,
     DiversityRewardModel,
     PromptRewardModel,
