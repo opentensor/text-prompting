@@ -137,4 +137,3 @@ class BaseRewardModel:
 
         # Return the filled rewards.
         return filled_rewards, filled_rewards_normalized
-
