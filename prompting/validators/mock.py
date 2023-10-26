@@ -21,13 +21,14 @@ import asyncio
 import bittensor as bt
 from prompting.validators.prompts import FirewallPrompt, FollowupPrompt, AnswerPrompt
 from prompting.validators.gating import BaseGatingModel
+from prompting.validators.reward import BaseRewardModel
 from typing import List
 
 
 class MockGatingModel(BaseGatingModel):
     def __init__(self, num_uids: int):
         super(MockGatingModel, self).__init__()
-        # super(MockGatingModel, self).__init__()
+
         self.num_uids = num_uids
         self.linear = torch.nn.Linear(256, 10)
 
@@ -53,7 +54,8 @@ class MockRewardModel(BaseRewardModel):
     def __init__(self, mock_name: str = "MockReward"):
         super().__init__()
         self.mock_name = mock_name
-        self.question_blacklist = {}
+        self.question_blacklist = []
+        self.answer_blacklist = []
 
     def apply(self, prompt: str, completion: List[str], name: str) -> torch.FloatTensor:
         mock_reward = torch.tensor([1 for _ in completion], dtype=torch.float32)
