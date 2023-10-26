@@ -130,7 +130,7 @@ class SummaryTask(Task):
         Your task is to summarize the text delimited with triple backticks:
         '''{base_text}'''
         
-        The following criteria should be respected:
+        The following criteria must be respected:
         {criteria}
         - Do not try to create questions or answers for your summarization. 
         """)
@@ -153,7 +153,7 @@ class QuestionGenerationTask(Task):
         Your task is to ask a single relevant and insightful question about the preceding context delimited with triple backticks:
         '''{base_text}'''
         
-        The following criteria should be respected:
+        The following criteria must be respected:
         {criteria}                                      
         - Do not answer the question you generate. 
         - Do not try to summarize the text
@@ -176,7 +176,7 @@ class QuestionAnswerTask(Task):
         Read the preceding context delimited with triple backticks carefully. Your task is to answer the question step by step and explain your thoughts:
         '''{base_text}'''
         
-        The following criteria should be respected:
+        The following criteria must be respected:
         {criteria}                                      
         - Do not include questions or summaries in your answer.
         """)

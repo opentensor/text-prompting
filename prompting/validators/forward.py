@@ -135,7 +135,7 @@ async def run_step(
 
     task_validation_penalties = task.validate(responses)        
     rewards *= task_validation_penalties.to(self.device)
-    event["accumulated_penalties"] = task_validation_penalties.tolist()
+    event["accumulated_validation_penalties"] = task_validation_penalties.tolist()
 
     # Train the gating model based on the predicted scores and the actual rewards.
     gating_scores: torch.FloatTensor = self.gating_model(prompt).to(self.device)

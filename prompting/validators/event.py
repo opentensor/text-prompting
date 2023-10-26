@@ -34,6 +34,7 @@ class EventSchema:
         str
     ]  # List of completion status codes for a given prompt
     name: str  # Prompt type, e.g. 'followup', 'answer'
+    task_type: str # Task type, e.g. 'summary', 'question'
     block: float  # Current block at given step
     gating_loss: float  # Gating model loss for given step
     uids: List[int]  # Queried uids
@@ -87,6 +88,8 @@ class EventSchema:
         List[float]
     ]  # Output vector of the relevance scoring reward model
     task_validator_filter_normalized: Optional[List[float]]
+    # Output vector of the task validation penalties accumulation 
+    accumulated_validation_penalties: Optional[List[float]]
 
     # Weights data
     set_weights: Optional[List[List[float]]]
@@ -152,6 +155,7 @@ class EventSchema:
             completion_status_messages=event_dict["completion_status_messages"],
             completion_status_codes=event_dict["completion_status_codes"],
             name=event_dict["name"],
+            task_type=event_dict["task_type"],
             block=event_dict["block"],
             gating_loss=event_dict["gating_loss"],
             uids=event_dict["uids"],
@@ -159,6 +163,7 @@ class EventSchema:
             step_length=event_dict["step_length"],
             best=event_dict["best"],
             rewards=event_dict["rewards"],
+            accumulated_validation_penalties=event_dict["accumulated_validation_penalties"],
             **rewards,
             set_weights=None,
         )
