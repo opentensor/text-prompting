@@ -23,7 +23,6 @@ import copy
 import bittensor as bt
 import prompting.validators as validators
 from prompting.validators.misc import ttl_get_block
-from prompting.validators.reward import MockRewardModel
 
 
 def should_reinit_wandb(self):
@@ -49,7 +48,7 @@ def init_wandb(self, reinit=False):
     if self.config.neuron.use_custom_gating_model:
         tags.append("custom_gating_model")
     for fn in self.reward_functions:
-        if not isinstance(fn, MockRewardModel):
+        if not self.config.neuron.mock_reward_models:
             tags.append(str(fn.name))
     if self.config.neuron.disable_set_weights:
         tags.append("disable_set_weights")
