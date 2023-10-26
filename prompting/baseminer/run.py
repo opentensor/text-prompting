@@ -49,11 +49,15 @@ def run(self):
         Exception: For unforeseen errors during the miner's operation, which are logged for diagnosis.
     """
     # --- Optionally register the wallet.
-    if not self.config.miner.no_register:
-        bt.logging.info(
-            f"Registering wallet: {self.wallet} on netuid {self.config.netuid}"
+    if not self.subtensor.is_hotkey_registered(
+        netuid=self.config.netuid,
+        hotkey=self.wallet.hotkey.ss58_address,
+    ):
+        bt.logging.error(
+            f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}"
+            f"Please register the hotkey using `btcli subnets register` before trying again"
         )
-        self.subtensor.register(netuid=self.config.netuid, wallet=self.wallet)
+        exit()
 
     # Serve passes the axon information to the network + netuid we are hosting on.
     # This will auto-update if the axon port of external ip have changed.
