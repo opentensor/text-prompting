@@ -133,6 +133,14 @@ async def run_step(
             event[masking_fn_i.name + "_normalized"] = mask_i_normalized.tolist()
         bt.logging.trace(str(masking_fn_i.name), mask_i_normalized.tolist())
 
+    for penalty_fn_i in self.penalty_functions:
+        penalty_i, penalty_i_normalized = penalty_fn_i.apply(prompt, responses, task_name)
+        rewards *= penalty_i_normalized.to(self.device)
+        if not self.config.neuron.disable_log_rewards:
+            event[penalty_fn_i.name] = penalty_i.tolist()
+            event[penalty_fn_i.name + "_normalized"] = penalty_i_normalized.tolist()
+        bt.logging.trace(str(penalty_fn_i.name), penalty_i_normalized.tolist())
+
     task_validation_penalties = task.validate(responses)        
     rewards *= task_validation_penalties.to(self.device)
     event["accumulated_validation_penalties"] = task_validation_penalties.tolist()

@@ -56,6 +56,7 @@ from prompting.validators.reward import (
     DiversityRewardModel,
     PromptRewardModel,
     RewardModelType,
+    KeywordPenaltyModel
 )
 
 
@@ -188,6 +189,9 @@ class neuron:
                 self.blacklist,
                 MockRewardModel(RewardModelType.nsfw.value),
             ]
+            self.penalty_functions = [
+                KeywordPenaltyModel()
+            ]
             bt.logging.debug(str(self.reward_functions))
         else:
             self.reward_weights = torch.tensor(
@@ -271,8 +275,14 @@ class neuron:
                 self.diversity_model,
                 nsfw_model,
             ]
+
+            self.penalty_functions = [
+                KeywordPenaltyModel(device=self.device)
+            ]
+
             bt.logging.debug(str(self.reward_functions))
             bt.logging.debug(str(self.masking_functions))
+            bt.logging.debug(str(self.penalty_functions))
 
         # Init the event loop.
         self.loop = asyncio.get_event_loop()
