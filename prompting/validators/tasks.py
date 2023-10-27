@@ -8,13 +8,6 @@ from prompting.validators.criteria import TaskCriterion, MaxOfNWordsCriteria, Ma
 
 @dataclass
 class Task(ABC):
-    """
-    Abstract base class for defining a task with multiple evaluation criteria.
-
-    Attributes:
-        base_text (str): Context for the instruction associated with the task.
-        criteria (List[TaskCriterion]): List of evaluation criteria associated with the task.        
-    """
     base_text: str    
     task_name: str
     task_type: str
