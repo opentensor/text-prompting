@@ -14,6 +14,12 @@ class BasePenaltyModel(ABC):
     def name(self) -> str:
         ...
 
+    def __str__(self) -> str:
+        return str(self.name)
+
+    def __repr__(self) -> str:
+        return str(self.name)
+
     @abstractmethod
     def calculate_penalties(task: Task, completions: List[str]) -> torch.FloatTensor:
         ...

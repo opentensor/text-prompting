@@ -143,17 +143,17 @@ class EventSchema:
             ),
         }
         penalties = {
-            "task_validation_penalty": event_dict.get(PenaltyModelType.task_validation_penalty.value) + "_raw",
-            "task_validation_penalty": event_dict.get(PenaltyModelType.task_validation_penalty.value) + "_adjusted",
-            "task_validation_penalty": event_dict.get(PenaltyModelType.task_validation_penalty.value) + "_applied",
+            "task_validation_penalty_raw": event_dict.get(PenaltyModelType.task_validation_penalty.value + "_raw"),
+            "task_validation_penalty_adjusted": event_dict.get(PenaltyModelType.task_validation_penalty.value + "_adjusted"),
+            "task_validation_penalty_applied": event_dict.get(PenaltyModelType.task_validation_penalty.value + "_applied"),
 
-            "keyword_match_penalty": event_dict.get(PenaltyModelType.keyword_match_penalty.value)+ "_raw",
-            "keyword_match_penalty": event_dict.get(PenaltyModelType.keyword_match_penalty.value)+ "_adjusted",
-            "keyword_match_penalty": event_dict.get(PenaltyModelType.keyword_match_penalty.value)+ "_applied",
+            "keyword_match_penalty_raw": event_dict.get(PenaltyModelType.keyword_match_penalty.value + "_raw"),
+            "keyword_match_penalty_adjusted": event_dict.get(PenaltyModelType.keyword_match_penalty.value + "_adjusted"),
+            "keyword_match_penalty_applied": event_dict.get(PenaltyModelType.keyword_match_penalty.value + "_applied"),
 
-            "sentence_length_penalty": event_dict.get(PenaltyModelType.sentence_length_penalty.value)+ "_raw",
-            "sentence_length_penalty": event_dict.get(PenaltyModelType.sentence_length_penalty.value)+ "_adjusted",
-            "sentence_length_penalty": event_dict.get(PenaltyModelType.sentence_length_penalty.value)+ "_applied",
+            "sentence_length_penalty_raw": event_dict.get(PenaltyModelType.sentence_length_penalty.value + "_raw"),
+            "sentence_length_penalty_adjusted": event_dict.get(PenaltyModelType.sentence_length_penalty.value + "_adjusted"),
+            "sentence_length_penalty_applied": event_dict.get(PenaltyModelType.sentence_length_penalty.value + "_applied"),
         }
 
         # Logs warning that expected data was not set properly
@@ -177,8 +177,7 @@ class EventSchema:
             prompt=event_dict["prompt"],
             step_length=event_dict["step_length"],
             best=event_dict["best"],
-            rewards=event_dict["rewards"],
-            accumulated_validation_penalties=event_dict["accumulated_validation_penalties"],
+            rewards=event_dict["rewards"],            
             **rewards,
             **penalties,
             set_weights=None,
