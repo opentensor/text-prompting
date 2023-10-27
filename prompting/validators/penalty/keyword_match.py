@@ -4,17 +4,9 @@ from prompting.validators.tasks import Task
 from prompting.validators.penalty.penalty import BasePenaltyModel, PenaltyModelType
 
 class KeywordMatchPenaltyModel(BasePenaltyModel):
-    def __init__(self, max_penalty: float):
-        self.max_penalty = max_penalty
-        super().__init__()
-
     @property
     def name(self) -> str:
         return PenaltyModelType.keyword_match_penalty.value
-
-    @property
-    def max_penalty(self) -> float:
-        return self.max_penalty
     
     def check_exploits_keywords(self, completion: str, name: str) -> float:
         summary_keywords = ["Summary:", "Paraphrase:", "Paraphrasing:", "Paraphrased:"]
@@ -41,21 +33,21 @@ class KeywordMatchPenaltyModel(BasePenaltyModel):
         if (
             is_summarization_prompt or is_question_prompt
         ) and completion_contains_answer:
-            return 0.0
+            return 1
 
         if (
             is_summarization_prompt or is_answer_prompt
         ) and completion_contains_question:
-            return 0.0
+            return 1
 
         if not is_summarization_prompt and completion_contains_summary:
-            return 0.0
+            return 1
 
-        return 1
+        return 0
 
 
     def calculate_penalties(self, task: Task, completions: List[str]) -> torch.FloatTensor:
         return torch.tensor(
-            [self.reward(completion, task.task_name) for completion in completions],
+            [self.check_exploits_keywords(completion, task.task_name) for completion in completions],
             dtype=torch.float32,
         )

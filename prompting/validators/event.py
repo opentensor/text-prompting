@@ -85,18 +85,18 @@ class EventSchema:
     relevance_filter_normalized: Optional[
         List[float]
     ]
-    # Output vector of the accumulated validation penalties
-    task_validation_penalty: Optional[
-        List[float]
-    ]
-    # Output vector of the keyword match penalties
-    keyword_match_penalty: Optional[
-        List[float]
-    ]
-    # Output vector of the sentence length penalties
-    sentence_length_penalty: Optional[
-        List[float]
-    ]
+    # TODO: Add comments
+    task_validation_penalty_raw: Optional[List[float]]
+    task_validation_penalty_adjusted: Optional[List[float]]
+    task_validation_penalty_applied: Optional[List[float]]
+    
+    keyword_match_penalty_raw: Optional[List[float]]
+    keyword_match_penalty_adjusted: Optional[List[float]]
+    keyword_match_penalty_applied: Optional[List[float]]
+    
+    sentence_length_penalty_raw: Optional[List[float]]
+    sentence_length_penalty_adjusted: Optional[List[float]]
+    sentence_length_penalty_applied: Optional[List[float]]
 
     # Weights data
     set_weights: Optional[List[List[float]]]
@@ -143,9 +143,17 @@ class EventSchema:
             ),
         }
         penalties = {
-            "task_validation_penalty": event_dict.get(PenaltyModelType.task_validation_penalty.value),
-            "keyword_match_penalty": event_dict.get(PenaltyModelType.keyword_match_penalty.value),
-            "sentence_length_penalty": event_dict.get(PenaltyModelType.sentence_length_penalty.value),
+            "task_validation_penalty": event_dict.get(PenaltyModelType.task_validation_penalty.value) + "_raw",
+            "task_validation_penalty": event_dict.get(PenaltyModelType.task_validation_penalty.value) + "_adjusted",
+            "task_validation_penalty": event_dict.get(PenaltyModelType.task_validation_penalty.value) + "_applied",
+
+            "keyword_match_penalty": event_dict.get(PenaltyModelType.keyword_match_penalty.value)+ "_raw",
+            "keyword_match_penalty": event_dict.get(PenaltyModelType.keyword_match_penalty.value)+ "_adjusted",
+            "keyword_match_penalty": event_dict.get(PenaltyModelType.keyword_match_penalty.value)+ "_applied",
+
+            "sentence_length_penalty": event_dict.get(PenaltyModelType.sentence_length_penalty.value)+ "_raw",
+            "sentence_length_penalty": event_dict.get(PenaltyModelType.sentence_length_penalty.value)+ "_adjusted",
+            "sentence_length_penalty": event_dict.get(PenaltyModelType.sentence_length_penalty.value)+ "_applied",
         }
 
         # Logs warning that expected data was not set properly

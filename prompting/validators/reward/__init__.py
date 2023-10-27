@@ -9,4 +9,3 @@ from .dahoas import DahoasRewardModel
 from .diversity import DiversityRewardModel
 from .prompt import PromptRewardModel
 from .config import RewardModelType, DefaultRewardFrameworkConfig
-from .keyword_penalty import KeywordPenaltyModel

@@ -74,23 +74,23 @@ class QuestionAnswerTask(Task):
 
 
 def create_summarization_task(base_text: str) -> SummaryTask:
-    match_words_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(50, 200), unit=TextLengthUnitEnum.WORDS),
-    match_length_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(4, 8), unit=TextLengthUnitEnum.SENTENCES),
+    match_words_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(50, 200), unit=TextLengthUnitEnum.WORDS)
+    match_length_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(4, 8), unit=TextLengthUnitEnum.SENTENCES)
     
     criteria = [match_words_criteria, match_length_criteria]
 
     return SummaryTask(base_text=base_text, criteria=criteria, task_type='summarization', task_name='augment')
 
 def create_qg_task(base_text: str, index: int) -> QuestionGenerationTask:
-    match_words_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(25, 50), unit=TextLengthUnitEnum.WORDS),
-    match_chars_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(125, 250), unit=TextLengthUnitEnum.CHARACTERS),
+    match_words_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(25, 50), unit=TextLengthUnitEnum.WORDS)
+    match_chars_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(125, 250), unit=TextLengthUnitEnum.CHARACTERS)
         
     criteria = [match_words_criteria, match_chars_criteria]
 
     return QuestionGenerationTask(base_text=base_text, criteria=criteria, task_type='question-generation', task_name=f'followup{index}')
 
 def create_qa_task(base_text: str, index:int) -> QuestionAnswerTask:
-    match_words_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(50, 200), unit=TextLengthUnitEnum.WORDS),
+    match_words_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(50, 200), unit=TextLengthUnitEnum.WORDS)
     match_length_criteria = MatchLengthCriteria(penalty=0.1, target_length=random.randint(4, 8), unit=TextLengthUnitEnum.SENTENCES)
 
     criteria = [match_words_criteria, match_length_criteria]

@@ -65,7 +65,7 @@ class MatchLengthCriteria(TaskCriterion):
                 # small deviations from the target length are penalized less than larger deviations.
                 penalty_scale_factor = min(abs(1 - (completion_length / self.target_length)), 1)
 
-                scaled_penalty = 1 - (self.penalty * penalty_scale_factor)
+                scaled_penalty = self.penalty * penalty_scale_factor
                 penalties[idx] = scaled_penalty
 
         return penalties
