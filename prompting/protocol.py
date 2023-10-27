@@ -235,6 +235,7 @@ class StreamPrompting(bt.StreamingSynapse):
             for token in tokens:
                 if token:
                     self.completion += token
+            yield tokens
 
     def deserialize(self) -> str:
         """
