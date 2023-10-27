@@ -3,6 +3,7 @@ import torch
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import List
+from enum import Enum
 
 @dataclass
 class TaskCriterion(ABC):
@@ -26,40 +27,49 @@ class TaskCriterion(ABC):
     def compose_text(self) -> str:
         pass
 
+class TextLengthUnitEnum(Enum):    
+    CHARACTERS = "characters"
+    WORDS = "words"
+    SENTENCES = "sentences"
+    PARAGRAPHS = "paragraphs"    
+
+
 @dataclass
-class MaxOfNWordsCriteria(TaskCriterion):
-    text: str = "Your response must contain at most {n_words} words."
-    n_words : int = 50
+class MatchLengthCriteria(TaskCriterion):        
+    text: str = "Your response must have {target_length} {unit}."
     penalty: float = 0.1
-
-    def evaluate(self, completions: List[str]) -> torch.FloatTensor:        
-        penalties = torch.zeros(len(completions), dtype=torch.float32)
-    
-        for idx, response in enumerate(completions):
-            surpass_n_words = len(re.split(r' +', response)) > self.n_words
-            if surpass_n_words:
-                penalties[idx] = self.penalty
-
-        return penalties
-
-    def compose_text(self) -> str:
-        return self.text.format(n_words=self.n_words)
-    
-@dataclass
-class MatchNSentencesCriteria(TaskCriterion):
-    text: str = "Your response must have {n_sentences} sentences."
-    n_sentences : int = 5
-    penalty: float = 0.1
+    target_length: int = 100
+    unit: TextLengthUnitEnum = TextLengthUnitEnum.WORDS
+   
+    def _get_completion_length(self, response: str) -> int:
+        unit_to_split_pattern = {
+            TextLengthUnitEnum.CHARACTERS: None,
+            TextLengthUnitEnum.WORDS: r' +',
+            TextLengthUnitEnum.SENTENCES: r'\. +',
+            TextLengthUnitEnum.PARAGRAPHS: r'\n\n+'
+        }
+        
+        if self.unit == TextLengthUnitEnum.CHARACTERS:
+            return len(response)
+        else:
+            split_pattern = unit_to_split_pattern[self.unit]
+            return len(re.split(split_pattern, response.strip()))
 
     def evaluate(self, completions: List[str]) -> torch.FloatTensor:
         penalties = torch.zeros(len(completions), dtype=torch.float32)
+        for idx, completion in enumerate(completions):
+            completion_length = self._get_completion_length(completion)
+            if completion_length != self.target_length:
+                # Scales the penalty based on how close the response length is to the expected target length.
+                # If the response length is closer to the target, the penalty is reduced, ensuring that 
+                # small deviations from the target length are penalized less than larger deviations.
+                penalty_scale_factor = min(abs(1 - (completion_length / self.target_length)), 1)
 
-        for idx, response in enumerate(completions):
-            response_n_sentences = len(re.split(r'\. +', response))
-            if response_n_sentences != self.n_sentences:
-                penalties[idx] = self.penalty
+                scaled_penalty = 1 - (self.penalty * penalty_scale_factor)
+                penalties[idx] = scaled_penalty
 
         return penalties
 
     def compose_text(self) -> str:            
-        return self.text.format(n_sentences=self.n_sentences)
+        return self.text.format(target_length=self.target_length, unit=self.unit.value)
+

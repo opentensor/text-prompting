@@ -45,8 +45,7 @@ from prompting.validators.misc import ttl_get_block
 
 # Load gating models
 from prompting.validators.reward import (
-    Blacklist,
-    TaskValidator,
+    Blacklist,    
     NSFWRewardModel,
     DirectPreferenceRewardModel,
     OpenAssistantRewardModel,
@@ -55,8 +54,13 @@ from prompting.validators.reward import (
     DahoasRewardModel,
     DiversityRewardModel,
     PromptRewardModel,
-    RewardModelType,
-    KeywordPenaltyModel
+    RewardModelType    
+)
+
+from prompting.validators.penalty import (
+    TaskValidationPenaltyModel,
+    KeywordMatchPenaltyModel,
+    SentenceMatchPenaltyModel
 )
 
 
@@ -190,7 +194,9 @@ class neuron:
                 MockRewardModel(RewardModelType.nsfw.value),
             ]
             self.penalty_functions = [
-                KeywordPenaltyModel()
+                TaskValidationPenaltyModel(max_penalty=0.1),
+                SentenceMatchPenaltyModel(max_penalty=0.1),
+                KeywordMatchPenaltyModel(max_penalty=1),                
             ]
             bt.logging.debug(str(self.reward_functions))
         else:
@@ -246,12 +252,7 @@ class neuron:
                 Blacklist()
                 if not self.config.neuron.blacklist_off
                 else MockRewardModel(RewardModelType.blacklist.value)
-            )
-            task_validator = (
-                TaskValidator()
-                if not self.config.neuron.task_validator_off
-                else MockRewardModel(RewardModelType.task_validator.value)
-            )
+            )            
             relevance_model = (
                 RelevanceRewardModel(device=self.device)
                 if not self.config.neuron.relevance_off
@@ -269,15 +270,16 @@ class neuron:
             )
 
             self.masking_functions = [
-                self.blacklist,
-                task_validator,
+                self.blacklist,                
                 relevance_model,
                 self.diversity_model,
                 nsfw_model,
             ]
 
             self.penalty_functions = [
-                KeywordPenaltyModel(device=self.device)
+                TaskValidationPenaltyModel(max_penalty=0.1),
+                SentenceMatchPenaltyModel(max_penalty=0.1),
+                KeywordMatchPenaltyModel(max_penalty=1),                
             ]
 
             bt.logging.debug(str(self.reward_functions))

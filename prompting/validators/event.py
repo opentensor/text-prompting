@@ -19,9 +19,8 @@
 import bittensor as bt
 from dataclasses import dataclass
 from typing import List, Optional
-
 from prompting.validators.reward import RewardModelType
-
+from prompting.validators.penalty import PenaltyModelType
 
 @dataclass
 class EventSchema:
@@ -62,8 +61,7 @@ class EventSchema:
     ]  # Output vector of the prompt reward model
     relevance_filter: Optional[
         List[float]
-    ]  # Output vector of the relevance scoring reward model
-    task_validator_filter: Optional[List[float]]
+    ]
     keyword_match_penalty: Optional[List[float]] # Output vector of the keyword match penalty
     dahoas_reward_model_normalized: Optional[
         List[float]
@@ -86,10 +84,19 @@ class EventSchema:
     ]  # Output vector of the prompt reward model
     relevance_filter_normalized: Optional[
         List[float]
-    ]  # Output vector of the relevance scoring reward model
-    task_validator_filter_normalized: Optional[List[float]]    
-    # Output vector of the task validation penalties accumulation 
-    accumulated_validation_penalties: Optional[List[float]]
+    ]
+    # Output vector of the accumulated validation penalties
+    task_validation_penalty: Optional[
+        List[float]
+    ]
+    # Output vector of the keyword match penalties
+    keyword_match_penalty: Optional[
+        List[float]
+    ]
+    # Output vector of the sentence length penalties
+    sentence_length_penalty: Optional[
+        List[float]
+    ]
 
     # Weights data
     set_weights: Optional[List[List[float]]]
@@ -99,10 +106,7 @@ class EventSchema:
         """Converts a dictionary to an EventSchema object."""
         rewards = {
             "blacklist_filter": event_dict.get(RewardModelType.blacklist.value),
-            "dahoas_reward_model": event_dict.get(RewardModelType.dahoas.value),
-            "task_validator_filter": event_dict.get(
-                RewardModelType.task_validator.value
-            ),
+            "dahoas_reward_model": event_dict.get(RewardModelType.dahoas.value),            
             "nsfw_filter": event_dict.get(RewardModelType.nsfw.value),
             "relevance_filter": event_dict.get(RewardModelType.relevance.value),
             "reciprocate_reward_model": event_dict.get(
@@ -115,10 +119,7 @@ class EventSchema:
             "keyword_match_penalty": event_dict.get(RewardModelType.keyword_match.value),
             "dahoas_reward_model_normalized": event_dict.get(
                 RewardModelType.dahoas.value + "_normalized"
-            ),
-            "task_validator_filter_normalized": event_dict.get(
-                RewardModelType.task_validator.value + "_normalized"
-            ),
+            ),            
             "nsfw_filter_normalized": event_dict.get(
                 RewardModelType.nsfw.value + "_normalized"
             ),
@@ -140,6 +141,11 @@ class EventSchema:
             "prompt_reward_model_normalized": event_dict.get(
                 RewardModelType.prompt.value + "_normalized"
             ),
+        }
+        penalties = {
+            "task_validation_penalty": event_dict.get(PenaltyModelType.task_validation_penalty.value),
+            "keyword_match_penalty": event_dict.get(PenaltyModelType.keyword_match_penalty.value),
+            "sentence_length_penalty": event_dict.get(PenaltyModelType.sentence_length_penalty.value),
         }
 
         # Logs warning that expected data was not set properly
@@ -166,5 +172,6 @@ class EventSchema:
             rewards=event_dict["rewards"],
             accumulated_validation_penalties=event_dict["accumulated_validation_penalties"],
             **rewards,
+            **penalties,
             set_weights=None,
         )

@@ -134,16 +134,12 @@ async def run_step(
         bt.logging.trace(str(masking_fn_i.name), mask_i_normalized.tolist())
 
     for penalty_fn_i in self.penalty_functions:
-        penalty_i, penalty_i_normalized = penalty_fn_i.apply(prompt, responses, task_name)
+        penalty_i, penalty_i_normalized = penalty_fn_i.apply_penalties(prompt, responses, task)
         rewards *= penalty_i_normalized.to(self.device)
         if not self.config.neuron.disable_log_rewards:
             event[penalty_fn_i.name] = penalty_i.tolist()
             event[penalty_fn_i.name + "_normalized"] = penalty_i_normalized.tolist()
-        bt.logging.trace(str(penalty_fn_i.name), penalty_i_normalized.tolist())
-
-    task_validation_penalties = task.validate(responses)        
-    rewards *= task_validation_penalties.to(self.device)
-    event["accumulated_validation_penalties"] = task_validation_penalties.tolist()
+        bt.logging.trace(str(penalty_fn_i.name), penalty_i_normalized.tolist())    
 
     # Train the gating model based on the predicted scores and the actual rewards.
     gating_scores: torch.FloatTensor = self.gating_model(prompt).to(self.device)
