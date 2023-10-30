@@ -17,6 +17,9 @@
 # DEALINGS IN THE SOFTWARE.
 import re
 import torch
+import json
+import yaml
+import ast
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import List
@@ -94,3 +97,76 @@ class MatchLengthCriteria(TaskCriterion):
 
     def compose_text(self) -> str:
         return self.text.format(target_length=self.target_length, unit=self.unit.value)
+    
+class LayoutTypeEnum(Enum):
+    JSON = "json"
+    YAML = "yaml"
+    DICTIONARY = "python dictionary"
+    NUMBEREDLIST = "numbered list"
+    BULLETPOINTLIST = "bullet point list"
+
+@dataclass
+class MatchLayoutCriteria(TaskCriterion):
+    text: str = "Your response must be in the form of a {format_type}{w}{fields}"
+    penalty: float = 0.1
+    format_type: LayoutTypeEnum = LayoutTypeEnum.JSON
+    num_fields: int = 0
+    fields : str = " with {num_fields} fields"
+
+    def is_json(text):
+        try:
+            json.loads(text)
+            return True
+        except ValueError:
+            return False
+    
+    def is_yaml(text):
+        try:
+            yaml.safe_load(text)
+            return True
+        except yaml.YAMLError:
+            return False
+        
+    def is_dictionary(text):
+        try:
+            if type(ast.literal_eval(text)) == dict:
+                return True
+            else:
+                return False
+        except (ValueError, SyntaxError):
+            return False
+
+    def is_numbered_list(input_string):
+        pattern = r'^\d.*\n?$'
+        lines = input_string.split('\n')
+        return all(re.match(pattern, line) for line in lines)
+    
+    def is_bullet_point_list(input_string):
+        pattern = r'^\s*[-*+]\s.*\n?(\s*[-*+]\s.*\n?)*$'
+        return bool(re.match(pattern, input_string))
+
+    def _get_format_match(self, response : str) -> bool:
+        if self.format_type == LayoutTypeEnum.JSON:
+            return self.is_json(response)
+        elif self.format_type == LayoutTypeEnum.YAML:
+            return self.is_yaml(response)
+        elif self.format_type == LayoutTypeEnum.DICTIONARY:
+            return self.is_dictionary(response)
+        elif self.format_type == LayoutTypeEnum.NUMBEREDLIST:
+            return self.is_numbered_list(response)
+        elif self.format_type == LayoutTypeEnum.BULLETPOINTLIST:
+            return self.is_bullet_point_list(response)
+        else:
+            return False
+        
+    def evaluate(self, completions: list[str]) -> torch.FloatTensor:
+        penalties = torch.zeros(len(completions), dtype = torch.float32)
+        for idx, completion in enumerate(completions):
+            if not self._get_format_match(completion):
+                penalties[idx] = self.penalty
+        return penalties
+
+    def compose_text(self) -> str:
+        if self.num_fields == 0:
+            return self.text.format(format_type = self.format_type.value, fields = "")
+        return self.text.format(format_type = self.format_type.value, fields = self.fields)

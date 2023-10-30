@@ -25,6 +25,8 @@ from prompting.validators.criteria import (
     TaskCriterion,
     MatchLengthCriteria,
     TextLengthUnitEnum,
+    MatchLayoutCriteria,
+    LayoutTypeEnum,
 )
 
 
@@ -169,8 +171,12 @@ def create_qa_task(base_text: str, index: int) -> QuestionAnswerTask:
         target_length=random.randint(4, 8),
         unit=TextLengthUnitEnum.SENTENCES,
     )
+    match_layout_criteria = MatchLayoutCriteria(
+        penalty = 0.1, 
+        target_layout = LayoutTypeEnum.JSON
+    )
 
-    criteria = [match_words_criteria, match_length_criteria]
+    criteria = [match_words_criteria, match_length_criteria, match_layout_criteria]
 
     return QuestionAnswerTask(
         base_text=base_text,
