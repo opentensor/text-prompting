@@ -61,9 +61,6 @@ class EventSchema:
         List[float]
     ]  # Output vector of the prompt reward model
     relevance_filter: Optional[List[float]]
-    keyword_match_penalty: Optional[
-        List[float]
-    ]  # Output vector of the keyword match penalty
     dahoas_reward_model_normalized: Optional[
         List[float]
     ]  # Output vector of the dahoas reward model
@@ -115,9 +112,6 @@ class EventSchema:
             "dpo_reward_model": event_dict.get(RewardModelType.dpo.value),
             "rlhf_reward_model": event_dict.get(RewardModelType.rlhf.value),
             "prompt_reward_model": event_dict.get(RewardModelType.prompt.value),
-            "keyword_match_penalty": event_dict.get(
-                RewardModelType.keyword_match.value
-            ),
             "dahoas_reward_model_normalized": event_dict.get(
                 RewardModelType.dahoas.value + "_normalized"
             ),
