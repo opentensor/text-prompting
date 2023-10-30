@@ -30,17 +30,17 @@ class KeywordPenaltyModel(BaseRewardModel):
         super().__init__()
 
     def reward(self, prompt: str, completion: str, name: str) -> float:
-        # NOTE: This is an example placeholder, the data source can be easily expanded to include more sentences 
-        # or be externalized in a public hugging face dataset.        
+        # NOTE: This is an example placeholder, the data source can be easily expanded to include more sentences
+        # or be externalized in a public hugging face dataset.
         penalizing_sentences = [
             "what have we learned from this task?",
             "here is a task",
             "here is the solution",
             "use complete sentences",
-            #...
+            # ...
         ]
 
-        accumulated_penalty = 0.0        
+        accumulated_penalty = 0.0
         for sentence in penalizing_sentences:
             if sentence in completion.lower():
                 accumulated_penalty += 0.1

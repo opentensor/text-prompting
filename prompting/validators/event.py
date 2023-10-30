@@ -22,6 +22,7 @@ from typing import List, Optional
 from prompting.validators.reward import RewardModelType
 from prompting.validators.penalty import PenaltyModelType
 
+
 @dataclass
 class EventSchema:
     completions: List[str]  # List of completions received for a given prompt
@@ -33,7 +34,7 @@ class EventSchema:
         str
     ]  # List of completion status codes for a given prompt
     name: str  # Prompt type, e.g. 'followup', 'answer'
-    task_type: str # Task type, e.g. 'summary', 'question'
+    task_type: str  # Task type, e.g. 'summary', 'question'
     block: float  # Current block at given step
     gating_loss: float  # Gating model loss for given step
     uids: List[int]  # Queried uids
@@ -59,10 +60,10 @@ class EventSchema:
     prompt_reward_model: Optional[
         List[float]
     ]  # Output vector of the prompt reward model
-    relevance_filter: Optional[
+    relevance_filter: Optional[List[float]]
+    keyword_match_penalty: Optional[
         List[float]
-    ]
-    keyword_match_penalty: Optional[List[float]] # Output vector of the keyword match penalty
+    ]  # Output vector of the keyword match penalty
     dahoas_reward_model_normalized: Optional[
         List[float]
     ]  # Output vector of the dahoas reward model
@@ -82,18 +83,16 @@ class EventSchema:
     prompt_reward_model_normalized: Optional[
         List[float]
     ]  # Output vector of the prompt reward model
-    relevance_filter_normalized: Optional[
-        List[float]
-    ]
+    relevance_filter_normalized: Optional[List[float]]
     # TODO: Add comments
     task_validation_penalty_raw: Optional[List[float]]
     task_validation_penalty_adjusted: Optional[List[float]]
     task_validation_penalty_applied: Optional[List[float]]
-    
+
     keyword_match_penalty_raw: Optional[List[float]]
     keyword_match_penalty_adjusted: Optional[List[float]]
     keyword_match_penalty_applied: Optional[List[float]]
-    
+
     sentence_length_penalty_raw: Optional[List[float]]
     sentence_length_penalty_adjusted: Optional[List[float]]
     sentence_length_penalty_applied: Optional[List[float]]
@@ -106,7 +105,7 @@ class EventSchema:
         """Converts a dictionary to an EventSchema object."""
         rewards = {
             "blacklist_filter": event_dict.get(RewardModelType.blacklist.value),
-            "dahoas_reward_model": event_dict.get(RewardModelType.dahoas.value),            
+            "dahoas_reward_model": event_dict.get(RewardModelType.dahoas.value),
             "nsfw_filter": event_dict.get(RewardModelType.nsfw.value),
             "relevance_filter": event_dict.get(RewardModelType.relevance.value),
             "reciprocate_reward_model": event_dict.get(
@@ -116,10 +115,12 @@ class EventSchema:
             "dpo_reward_model": event_dict.get(RewardModelType.dpo.value),
             "rlhf_reward_model": event_dict.get(RewardModelType.rlhf.value),
             "prompt_reward_model": event_dict.get(RewardModelType.prompt.value),
-            "keyword_match_penalty": event_dict.get(RewardModelType.keyword_match.value),
+            "keyword_match_penalty": event_dict.get(
+                RewardModelType.keyword_match.value
+            ),
             "dahoas_reward_model_normalized": event_dict.get(
                 RewardModelType.dahoas.value + "_normalized"
-            ),            
+            ),
             "nsfw_filter_normalized": event_dict.get(
                 RewardModelType.nsfw.value + "_normalized"
             ),
@@ -143,17 +144,33 @@ class EventSchema:
             ),
         }
         penalties = {
-            "task_validation_penalty_raw": event_dict.get(PenaltyModelType.task_validation_penalty.value + "_raw"),
-            "task_validation_penalty_adjusted": event_dict.get(PenaltyModelType.task_validation_penalty.value + "_adjusted"),
-            "task_validation_penalty_applied": event_dict.get(PenaltyModelType.task_validation_penalty.value + "_applied"),
-
-            "keyword_match_penalty_raw": event_dict.get(PenaltyModelType.keyword_match_penalty.value + "_raw"),
-            "keyword_match_penalty_adjusted": event_dict.get(PenaltyModelType.keyword_match_penalty.value + "_adjusted"),
-            "keyword_match_penalty_applied": event_dict.get(PenaltyModelType.keyword_match_penalty.value + "_applied"),
-
-            "sentence_length_penalty_raw": event_dict.get(PenaltyModelType.sentence_length_penalty.value + "_raw"),
-            "sentence_length_penalty_adjusted": event_dict.get(PenaltyModelType.sentence_length_penalty.value + "_adjusted"),
-            "sentence_length_penalty_applied": event_dict.get(PenaltyModelType.sentence_length_penalty.value + "_applied"),
+            "task_validation_penalty_raw": event_dict.get(
+                PenaltyModelType.task_validation_penalty.value + "_raw"
+            ),
+            "task_validation_penalty_adjusted": event_dict.get(
+                PenaltyModelType.task_validation_penalty.value + "_adjusted"
+            ),
+            "task_validation_penalty_applied": event_dict.get(
+                PenaltyModelType.task_validation_penalty.value + "_applied"
+            ),
+            "keyword_match_penalty_raw": event_dict.get(
+                PenaltyModelType.keyword_match_penalty.value + "_raw"
+            ),
+            "keyword_match_penalty_adjusted": event_dict.get(
+                PenaltyModelType.keyword_match_penalty.value + "_adjusted"
+            ),
+            "keyword_match_penalty_applied": event_dict.get(
+                PenaltyModelType.keyword_match_penalty.value + "_applied"
+            ),
+            "sentence_length_penalty_raw": event_dict.get(
+                PenaltyModelType.sentence_length_penalty.value + "_raw"
+            ),
+            "sentence_length_penalty_adjusted": event_dict.get(
+                PenaltyModelType.sentence_length_penalty.value + "_adjusted"
+            ),
+            "sentence_length_penalty_applied": event_dict.get(
+                PenaltyModelType.sentence_length_penalty.value + "_applied"
+            ),
         }
 
         # Logs warning that expected data was not set properly
@@ -177,7 +194,7 @@ class EventSchema:
             prompt=event_dict["prompt"],
             step_length=event_dict["step_length"],
             best=event_dict["best"],
-            rewards=event_dict["rewards"],            
+            rewards=event_dict["rewards"],
             **rewards,
             **penalties,
             set_weights=None,

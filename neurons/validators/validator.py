@@ -45,7 +45,7 @@ from prompting.validators.misc import ttl_get_block
 
 # Load gating models
 from prompting.validators.reward import (
-    Blacklist,    
+    Blacklist,
     NSFWRewardModel,
     DirectPreferenceRewardModel,
     OpenAssistantRewardModel,
@@ -54,13 +54,13 @@ from prompting.validators.reward import (
     DahoasRewardModel,
     DiversityRewardModel,
     PromptRewardModel,
-    RewardModelType    
+    RewardModelType,
 )
 
 from prompting.validators.penalty import (
     TaskValidationPenaltyModel,
     KeywordMatchPenaltyModel,
-    SentenceMatchPenaltyModel
+    SentenceMatchPenaltyModel,
 )
 
 
@@ -196,7 +196,7 @@ class neuron:
             self.penalty_functions = [
                 TaskValidationPenaltyModel(max_penalty=0.1),
                 SentenceMatchPenaltyModel(max_penalty=0.1),
-                KeywordMatchPenaltyModel(max_penalty=1),                
+                KeywordMatchPenaltyModel(max_penalty=1),
             ]
             bt.logging.debug(str(self.reward_functions))
         else:
@@ -252,7 +252,7 @@ class neuron:
                 Blacklist()
                 if not self.config.neuron.blacklist_off
                 else MockRewardModel(RewardModelType.blacklist.value)
-            )            
+            )
             relevance_model = (
                 RelevanceRewardModel(device=self.device)
                 if not self.config.neuron.relevance_off
@@ -270,7 +270,7 @@ class neuron:
             )
 
             self.masking_functions = [
-                self.blacklist,                
+                self.blacklist,
                 relevance_model,
                 self.diversity_model,
                 nsfw_model,
@@ -279,7 +279,7 @@ class neuron:
             self.penalty_functions = [
                 TaskValidationPenaltyModel(max_penalty=0.1),
                 SentenceMatchPenaltyModel(max_penalty=0.1),
-                KeywordMatchPenaltyModel(max_penalty=1),                
+                KeywordMatchPenaltyModel(max_penalty=1),
             ]
 
             bt.logging.debug(str(self.reward_functions))

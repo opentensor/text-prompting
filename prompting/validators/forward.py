@@ -30,7 +30,12 @@ from prompting.validators.event import EventSchema
 from prompting.validators.misc import ttl_get_block
 from prompting.validators.prompts import followup_prompt, answer_prompt, augment_prompt
 from prompting.validators.utils import check_uid_availability
-from prompting.validators.tasks import Task, create_summarization_task, create_qg_task, create_qa_task
+from prompting.validators.tasks import (
+    Task,
+    create_summarization_task,
+    create_qg_task,
+    create_qa_task,
+)
 
 import prompting
 
@@ -70,13 +75,7 @@ def get_random_uids(self, k: int, exclude: List[int] = None) -> torch.LongTensor
     return uids
 
 
-async def run_step(
-    self,
-    task: Task,
-    k: int,
-    timeout: float,    
-    exclude: list = []
-):    
+async def run_step(self, task: Task, k: int, timeout: float, exclude: list = []):
     task_name = task.task_name
     prompt = task.compose_prompt()
 
@@ -134,13 +133,17 @@ async def run_step(
         bt.logging.trace(str(masking_fn_i.name), mask_i_normalized.tolist())
 
     for penalty_fn_i in self.penalty_functions:
-        raw_penalty_i, adjusted_penalty_i, applied_penalty_i = penalty_fn_i.apply_penalties(responses, task)
+        (
+            raw_penalty_i,
+            adjusted_penalty_i,
+            applied_penalty_i,
+        ) = penalty_fn_i.apply_penalties(responses, task)
         rewards *= applied_penalty_i.to(self.device)
         if not self.config.neuron.disable_log_rewards:
             event[penalty_fn_i.name + "_raw"] = raw_penalty_i.tolist()
             event[penalty_fn_i.name + "_adjusted"] = adjusted_penalty_i.tolist()
             event[penalty_fn_i.name + "_applied"] = applied_penalty_i.tolist()
-        bt.logging.trace(str(penalty_fn_i.name), applied_penalty_i.tolist())    
+        bt.logging.trace(str(penalty_fn_i.name), applied_penalty_i.tolist())
 
     # Train the gating model based on the predicted scores and the actual rewards.
     gating_scores: torch.FloatTensor = self.gating_model(prompt).to(self.device)
@@ -217,9 +220,9 @@ async def forward(self):
     random_cutoff = random.randint(15, 30)
     # Truncate context to a limited set of sentences.
     base_text = ".".join(data.split(".", maxsplit=random_cutoff)[:-1])
-    
+
     # Create a summary task from the context.
-    summary_task: Task = create_summarization_task(base_text)    
+    summary_task: Task = create_summarization_task(base_text)
 
     # Reset Blacklist reward model
     self.blacklist.reset()
@@ -231,33 +234,33 @@ async def forward(self):
         k=self.config.neuron.followup_sample_size,
         timeout=self.config.neuron.followup_timeout,
     )
-    
+
     best_summary = summarization_event["best"]
     exclude = summarization_event["uids"]
 
     for k in range(self.config.neuron.num_followup_steps):
         # Get a followup question, given the summarized context.
-        qg_task = create_qg_task(base_text=best_summary, index=k)        
+        qg_task = create_qg_task(base_text=best_summary, index=k)
         qg_event = await run_step(
             self,
-            task=qg_task,            
+            task=qg_task,
             k=self.config.neuron.followup_sample_size,
             timeout=self.config.neuron.followup_timeout,
-            exclude=exclude            
+            exclude=exclude,
         )
         exclude += qg_event["uids"]
 
         # Ask the followup question, given the original context.
         best_question = qg_event["best"]
-        qa_base_text = best_summary + '\n' + best_question
+        qa_base_text = best_summary + "\n" + best_question
 
-        qa_task = create_qa_task(qa_base_text, index=k)        
+        qa_task = create_qa_task(qa_base_text, index=k)
         qa_event = await run_step(
             self,
-            task = qa_task,
+            task=qa_task,
             k=self.config.neuron.answer_sample_size,
             timeout=self.config.neuron.answer_timeout,
-            exclude=exclude            
+            exclude=exclude,
         )
         exclude += qa_event["uids"]
 

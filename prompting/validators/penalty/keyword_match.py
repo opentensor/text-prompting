@@ -3,11 +3,12 @@ from typing import List
 from prompting.validators.tasks import Task
 from prompting.validators.penalty.penalty import BasePenaltyModel, PenaltyModelType
 
+
 class KeywordMatchPenaltyModel(BasePenaltyModel):
     @property
     def name(self) -> str:
         return PenaltyModelType.keyword_match_penalty.value
-    
+
     def check_exploits_keywords(self, completion: str, name: str) -> float:
         summary_keywords = ["Summary:", "Paraphrase:", "Paraphrasing:", "Paraphrased:"]
         question_keywords = ["Question:", "Query:", "Q:"]
@@ -45,9 +46,13 @@ class KeywordMatchPenaltyModel(BasePenaltyModel):
 
         return 0
 
-
-    def calculate_penalties(self, task: Task, completions: List[str]) -> torch.FloatTensor:
+    def calculate_penalties(
+        self, task: Task, completions: List[str]
+    ) -> torch.FloatTensor:
         return torch.tensor(
-            [self.check_exploits_keywords(completion, task.task_name) for completion in completions],
+            [
+                self.check_exploits_keywords(completion, task.task_name)
+                for completion in completions
+            ],
             dtype=torch.float32,
         )
