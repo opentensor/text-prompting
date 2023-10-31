@@ -24,7 +24,7 @@ from prompting.validators.penalty.penalty import BasePenaltyModel, PenaltyModelT
 class SentenceMatchPenaltyModel(BasePenaltyModel):
     @property
     def name(self) -> str:
-        return PenaltyModelType.sentence_length_penalty.value
+        return PenaltyModelType.sentence_match_penalty.value
 
     def calculate_penalties(
         self, task: Task, completions: List[str]

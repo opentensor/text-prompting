@@ -90,9 +90,9 @@ class EventSchema:
     keyword_match_penalty_adjusted: Optional[List[float]]
     keyword_match_penalty_applied: Optional[List[float]]
 
-    sentence_length_penalty_raw: Optional[List[float]]
-    sentence_length_penalty_adjusted: Optional[List[float]]
-    sentence_length_penalty_applied: Optional[List[float]]
+    sentence_match_penalty_raw: Optional[List[float]]
+    sentence_match_penalty_adjusted: Optional[List[float]]
+    sentence_match_penalty_applied: Optional[List[float]]
 
     # Weights data
     set_weights: Optional[List[List[float]]]
@@ -156,14 +156,14 @@ class EventSchema:
             "keyword_match_penalty_applied": event_dict.get(
                 PenaltyModelType.keyword_match_penalty.value + "_applied"
             ),
-            "sentence_length_penalty_raw": event_dict.get(
-                PenaltyModelType.sentence_length_penalty.value + "_raw"
+            "sentence_match_penalty_raw": event_dict.get(
+                PenaltyModelType.sentence_match_penalty.value + "_raw"
             ),
-            "sentence_length_penalty_adjusted": event_dict.get(
-                PenaltyModelType.sentence_length_penalty.value + "_adjusted"
+            "sentence_match_penalty_adjusted": event_dict.get(
+                PenaltyModelType.sentence_match_penalty.value + "_adjusted"
             ),
-            "sentence_length_penalty_applied": event_dict.get(
-                PenaltyModelType.sentence_length_penalty.value + "_applied"
+            "sentence_match_penalty_applied": event_dict.get(
+                PenaltyModelType.sentence_match_penalty.value + "_applied"
             ),
         }
 

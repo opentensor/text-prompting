@@ -68,4 +68,4 @@ class BasePenaltyModel(ABC):
 class PenaltyModelType(Enum):
     task_validation_penalty = "task_validation_penalty"
     keyword_match_penalty = "keyword_match_penalty"
-    sentence_length_penalty = "sentence_length_penalty"
+    sentence_match_penalty = "sentence_match_penalty"
