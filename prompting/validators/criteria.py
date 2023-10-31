@@ -18,7 +18,8 @@
 import re
 import torch
 import json
-import yaml
+import random
+#import yaml
 import ast
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
@@ -105,6 +106,12 @@ class LayoutTypeEnum(Enum):
     NUMBEREDLIST = "numbered list"
     BULLETPOINTLIST = "bullet point list"
 
+    def _select_random_attribute(self):
+        attribute_names = [attr for attr in vars(self) if not attr.startswith('_')]
+        random_attribute_name = random.choice(attribute_names)
+        random_attribute_value = getattr(self, random_attribute_name)
+        return random_attribute_value
+
 @dataclass
 class MatchLayoutCriteria(TaskCriterion):
     text: str = "Your response must be in the form of a {format_type}{w}{fields}"
@@ -122,9 +129,9 @@ class MatchLayoutCriteria(TaskCriterion):
     
     def is_yaml(text):
         try:
-            yaml.safe_load(text)
+            #yaml.safe_load(text)
             return True
-        except yaml.YAMLError:
+        except: #yaml.YAMLError:
             return False
         
     def is_dictionary(text):
@@ -158,7 +165,7 @@ class MatchLayoutCriteria(TaskCriterion):
             return self.is_bullet_point_list(response)
         else:
             return False
-        
+    
     def evaluate(self, completions: list[str]) -> torch.FloatTensor:
         penalties = torch.zeros(len(completions), dtype = torch.float32)
         for idx, completion in enumerate(completions):

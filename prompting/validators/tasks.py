@@ -173,7 +173,7 @@ def create_qa_task(base_text: str, index: int) -> QuestionAnswerTask:
     )
     match_layout_criteria = MatchLayoutCriteria(
         penalty = 0.1, 
-        target_layout = LayoutTypeEnum.JSON
+        target_layout = LayoutTypeEnum._select_random_attribute(LayoutTypeEnum),
     )
 
     criteria = [match_words_criteria, match_length_criteria, match_layout_criteria]
