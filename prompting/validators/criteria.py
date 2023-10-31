@@ -101,7 +101,6 @@ class MatchLengthCriteria(TaskCriterion):
     
 class LayoutTypeEnum(Enum):
     JSON = "json"
-    YAML = "yaml"
     DICTIONARY = "python dictionary"
     NUMBEREDLIST = "numbered list"
     BULLETPOINTLIST = "bullet point list"
@@ -126,13 +125,6 @@ class MatchLayoutCriteria(TaskCriterion):
             return True
         except ValueError:
             return False
-    
-    def is_yaml(text):
-        try:
-            #yaml.safe_load(text)
-            return True
-        except: #yaml.YAMLError:
-            return False
         
     def is_dictionary(text):
         try:
@@ -155,8 +147,6 @@ class MatchLayoutCriteria(TaskCriterion):
     def _get_format_match(self, response : str) -> bool:
         if self.format_type == LayoutTypeEnum.JSON:
             return self.is_json(response)
-        elif self.format_type == LayoutTypeEnum.YAML:
-            return self.is_yaml(response)
         elif self.format_type == LayoutTypeEnum.DICTIONARY:
             return self.is_dictionary(response)
         elif self.format_type == LayoutTypeEnum.NUMBEREDLIST:
