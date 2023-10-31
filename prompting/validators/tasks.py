@@ -101,7 +101,8 @@ class QuestionAnswerTask(Task):
 
         prompt_template = textwrap.dedent(
             """\
-        Read the preceding context delimited with triple backticks carefully. Your task is to answer the question step by step and explain your thoughts:
+        Read the preceding context delimited with triple backticks carefully.
+        Your task is to provide a step-by-step answer to the last question found in the text, elaborating on your thought process:
         '''{base_text}'''
         
         The following criteria must be respected:
