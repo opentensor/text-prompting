@@ -52,7 +52,6 @@ from prompting.validators.reward import (
     OpenAssistantRewardModel,
     ReciprocateRewardModel,
     RelevanceRewardModel,
-    MockRewardModel,
     DahoasRewardModel,
     DiversityRewardModel,
     PromptRewardModel,
@@ -190,7 +189,6 @@ class neuron:
                 MockRewardModel(RewardModelType.nsfw.value),
             ]
             bt.logging.debug(str(self.reward_functions))
-            self.blacklist = MockRewardModel(RewardModelType.blacklist.value)
         else:
             self.reward_weights = torch.tensor(
                 [

@@ -137,20 +137,3 @@ class BaseRewardModel:
 
         # Return the filled rewards.
         return filled_rewards, filled_rewards_normalized
-
-
-class MockRewardModel(BaseRewardModel):
-    @property
-    def name(self) -> str:
-        return self.mock_name
-
-    def __init__(self, mock_name: str = "MockReward"):
-        super().__init__()
-        self.mock_name = mock_name
-
-    def apply(self, prompt: str, completion: List[str], name: str) -> torch.FloatTensor:
-        mock_reward = torch.tensor([1 for _ in completion], dtype=torch.float32)
-        return mock_reward, mock_reward
-
-    def reset(self):
-        return self
