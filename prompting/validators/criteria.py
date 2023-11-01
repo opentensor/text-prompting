@@ -17,6 +17,7 @@
 # DEALINGS IN THE SOFTWARE.
 import re
 import torch
+import numpy as np
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import List
@@ -80,12 +81,10 @@ class MatchLengthCriteria(TaskCriterion):
         for idx, completion in enumerate(completions):
             completion_length = self._get_completion_length(completion)
             if completion_length != self.target_length:
-                # Scales the penalty based on how close the response length is to the expected target length.
-                # If the response length is closer to the target, the penalty is reduced, ensuring that
-                # small deviations from the target length are penalized less than larger deviations.
-                penalty_scale_factor = min(
-                    abs(1 - (completion_length / self.target_length)), 1
-                )
+                # Scales the penalty using a quadratic function based on the deviation of the response length from the target length.
+                # The penalty is designed to be gentler on smaller deviations and steeper on larger deviations from the target length.
+                # The computed penalty is capped between 0 and 1.
+                penalty_scale_factor= np.abs(1 - (completion_length / self.target_length)**2).clip(0,1)                                                            
 
                 scaled_penalty = self.penalty * penalty_scale_factor
                 penalties[idx] = scaled_penalty
