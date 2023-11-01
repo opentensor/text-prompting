@@ -48,16 +48,11 @@ class BasePenaltyModel(ABC):
         completions = [response.completion for response in responses]
         raw_penalties = self.calculate_penalties(task, completions)
 
-        # Copy raw penalties to a new tensor for adjustments
-        adjusted_penalties = raw_penalties.clone()
+        # Clip penalties between 0 and 1
+        adjusted_penalties = torch.clip(raw_penalties, 0, 1)
 
-        # If accumulated penalties are bigger than 1, set them to 1
-        mask_greater_or_equal_1 = adjusted_penalties >= 1
-        adjusted_penalties[mask_greater_or_equal_1] = 1
-
-        # Adjust values greater than max_penalty
-        mask_greater_than_max_penalty = adjusted_penalties > self.max_penalty
-        adjusted_penalties[mask_greater_than_max_penalty] = self.max_penalty
+        # Clip penalties between 0 and self.max_penalty
+        adjusted_penalties = torch.clip(adjusted_penalties, 0, self.max_penalty)
 
         # Invert penalties to scale rewards accordingly
         applied_penalties = 1 - adjusted_penalties
