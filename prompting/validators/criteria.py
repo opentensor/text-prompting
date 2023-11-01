@@ -63,15 +63,8 @@ class MatchLengthCriteria(TaskCriterion):
     unit: TextLengthUnitEnum = TextLengthUnitEnum.WORDS
 
     def _count_sentences(self, text):
-        # Regex explanation:
-        # \b[A-Z]: Match an uppercase letter at the beginning of a word (assumed start of a sentence).
-        # (?:[a-zA-Z]\. ){0,2}: Match 0-2 occurrences of an abbreviation-like pattern (single letter followed by a dot and space).
-        # (?:[a-zA-Z]+\s+){1,}: Match at least one word followed by one or more whitespace characters.
-        # [a-zA-Z]+: Match the last word before the end punctuation.
-        # [.?!]: Match sentence-ending punctuation.
-        # (?!\w): Negative lookahead to ensure the punctuation is not followed by an alphanumeric character (part of an abbreviation).
-        # The pattern ignores common abbreviations by not counting them as sentence terminators.
-        pattern = r"\b[A-Z](?:[a-zA-Z]\. ){0,2}(?:[a-zA-Z]+\s+){1,}[a-zA-Z]+[.?!](?!\w)"
+        # Define str pattern to match
+        pattern = re.findall(r"(?<![A-Z])[\.\?!](?:\s|$)", text)
 
         # Find all matches
         sentences = re.findall(pattern, text)
