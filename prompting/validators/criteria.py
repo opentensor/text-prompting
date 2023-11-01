@@ -71,7 +71,7 @@ class MatchLengthCriteria(TaskCriterion):
         # [.?!]: Match sentence-ending punctuation.
         # (?!\w): Negative lookahead to ensure the punctuation is not followed by an alphanumeric character (part of an abbreviation).
         # The pattern ignores common abbreviations by not counting them as sentence terminators.
-        pattern = r'\b[A-Z](?:[a-zA-Z]\. ){0,2}(?:[a-zA-Z]+\s+){1,}[a-zA-Z]+[.?!](?!\w)'
+        pattern = r"\b[A-Z](?:[a-zA-Z]\. ){0,2}(?:[a-zA-Z]+\s+){1,}[a-zA-Z]+[.?!](?!\w)"
 
         # Find all matches
         sentences = re.findall(pattern, text)
@@ -81,7 +81,7 @@ class MatchLengthCriteria(TaskCriterion):
 
     def _get_completion_length(self, response: str) -> int:
         unit_to_split_pattern = {
-            TextLengthUnitEnum.CHARACTERS: None,            
+            TextLengthUnitEnum.CHARACTERS: None,
             TextLengthUnitEnum.SENTENCES: None,
             TextLengthUnitEnum.WORDS: r"\s+",
             TextLengthUnitEnum.PARAGRAPHS: r"\n\n+",
