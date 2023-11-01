@@ -33,18 +33,18 @@ class ContentMatchPenaltyModel(BasePenaltyModel):
         # NOTE: This is an example placeholder, the data source can be easily expanded to include more sentences
         # or be externalized in a public hugging face dataset.
         system_messages_penalizing_sentences = [
-            r"here(?:\s+is|\s*'s)\s+a\s+task", # here is a task, here's a task
-            r"here(?:\s+is|\s*'s)\s+the\s+solution", # here is the solution, here's the solution
-            r"here(?:\s+is|\s*'s)\s+my\s+question", # here is my question, here's my question
-            r"what\s+have\s+we\s+learned\s+from\s+this\s+task\?", # what have we learned from this task?
-            r"use\s+complete\s+sentences", # use complete sentences
-            r"the\s+question\s+was", # the question was
-            r"use\s+proper\s+grammar", # use proper grammar
-            r"what\s+is\s+the\s+correct\s+order\s+of\s+the\s+key\s+points", # what is the correct order of the key points
-            r"sure!\s+here.+", # sure! here...
-            r"solution\s+\(in\s+\w+\)", # solution (in \w+)
-            r"great\s+job!\s+here(?:'s| is)", # great job! here...
-            r"keep\s+it\s+clear\s+and\s+concise.\s+Use\s+complete\s+sentences." # keep it clear and concise. Use complete sentences.
+            r"here(?:\s+is|\s*'s)\s+a\s+task",  # here is a task, here's a task
+            r"here(?:\s+is|\s*'s)\s+the\s+solution",  # here is the solution, here's the solution
+            r"here(?:\s+is|\s*'s)\s+my\s+question",  # here is my question, here's my question
+            r"what\s+have\s+we\s+learned\s+from\s+this\s+task\?",  # what have we learned from this task?
+            r"use\s+complete\s+sentences",  # use complete sentences
+            r"the\s+question\s+was",  # the question was
+            r"use\s+proper\s+grammar",  # use proper grammar
+            r"what\s+is\s+the\s+correct\s+order\s+of\s+the\s+key\s+points",  # what is the correct order of the key points
+            r"sure!\s+here.+",  # sure! here...
+            r"solution\s+\(in\s+\w+\)",  # solution (in \w+)
+            r"great\s+job!\s+here(?:'s| is)",  # great job! here...
+            r"keep\s+it\s+clear\s+and\s+concise.\s+Use\s+complete\s+sentences.",  # keep it clear and concise. Use complete sentences.
         ]
 
         penalties = []

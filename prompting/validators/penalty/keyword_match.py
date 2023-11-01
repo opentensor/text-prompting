@@ -65,14 +65,14 @@ class KeywordMatchPenaltyModel(BasePenaltyModel):
         # Patterns defined accordingly to task orchestrator in forward function.
         # Punishes responses that copy the context
         text_separation_patterns = [
-                r"#+[\d\s]*QUESTION[\d\s]*:",
-                r"f\"\\n#+[\d\s]*ANSWER[\d\s]*:",
-                r"#+[\d\s]*SUMMARY[\d\s]*CONTEXT:"
-            ]
+            r"#+[\d\s]*QUESTION[\d\s]*:",
+            r"f\"\\n#+[\d\s]*ANSWER[\d\s]*:",
+            r"#+[\d\s]*SUMMARY[\d\s]*CONTEXT:",
+        ]
         for pattern in text_separation_patterns:
             if re.search(pattern, completion, re.IGNORECASE):
                 return 1
-        
+
         return 0
 
     def calculate_penalties(

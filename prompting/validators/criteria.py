@@ -84,7 +84,9 @@ class MatchLengthCriteria(TaskCriterion):
                 # Scales the penalty using a quadratic function based on the deviation of the response length from the target length.
                 # The penalty is designed to be gentler on smaller deviations and steeper on larger deviations from the target length.
                 # The computed penalty is capped between 0 and 1.
-                penalty_scale_factor= np.abs(1 - (completion_length / self.target_length)**2).clip(0,1)                                                            
+                penalty_scale_factor = np.abs(
+                    1 - (completion_length / self.target_length) ** 2
+                ).clip(0, 1)
 
                 scaled_penalty = self.penalty * penalty_scale_factor
                 penalties[idx] = scaled_penalty

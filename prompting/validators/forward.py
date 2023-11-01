@@ -117,7 +117,9 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
         self.device
     )
     for weight_i, reward_fn_i in zip(self.reward_weights, self.reward_functions):
-        reward_i, reward_i_normalized = reward_fn_i.apply(task.base_text, responses, task_name)
+        reward_i, reward_i_normalized = reward_fn_i.apply(
+            task.base_text, responses, task_name
+        )
         rewards += weight_i * reward_i_normalized.to(self.device)
         if not self.config.neuron.disable_log_rewards:
             event[reward_fn_i.name] = reward_i.tolist()
@@ -125,7 +127,9 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
         bt.logging.trace(str(reward_fn_i.name), reward_i_normalized.tolist())
 
     for masking_fn_i in self.masking_functions:
-        mask_i, mask_i_normalized = masking_fn_i.apply(task.base_text, responses, task_name)
+        mask_i, mask_i_normalized = masking_fn_i.apply(
+            task.base_text, responses, task_name
+        )
         rewards *= mask_i_normalized.to(self.device)  # includes diversity
         if not self.config.neuron.disable_log_rewards:
             event[masking_fn_i.name] = mask_i.tolist()
@@ -253,7 +257,7 @@ async def forward(self):
 
         # Adds the best question to the prompt context.
         best_question = qg_event["best"]
-        prompt_context += f"\n### QUESTION {k}:\n{best_question}"        
+        prompt_context += f"\n### QUESTION {k}:\n{best_question}"
 
         qa_task = create_qa_task(prompt_context, index=k)
         qa_event = await run_step(

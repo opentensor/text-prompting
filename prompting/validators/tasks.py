@@ -119,8 +119,16 @@ class QuestionAnswerTask(Task):
 
 def create_summarization_task(base_text: str) -> SummaryTask:
     possible_criterias = [
-        MatchLengthCriteria(penalty=0.1, target_length=random.randint(50, 200), unit=TextLengthUnitEnum.WORDS),
-        MatchLengthCriteria(penalty=0.1, target_length=random.randint(4, 8),unit=TextLengthUnitEnum.SENTENCES)
+        MatchLengthCriteria(
+            penalty=0.1,
+            target_length=random.randint(50, 200),
+            unit=TextLengthUnitEnum.WORDS,
+        ),
+        MatchLengthCriteria(
+            penalty=0.1,
+            target_length=random.randint(4, 8),
+            unit=TextLengthUnitEnum.SENTENCES,
+        ),
     ]
 
     sampled_criterias = random.sample(possible_criterias, 1)
@@ -135,8 +143,16 @@ def create_summarization_task(base_text: str) -> SummaryTask:
 
 def create_qg_task(base_text: str, index: int) -> QuestionGenerationTask:
     possible_criterias = [
-        MatchLengthCriteria(penalty=0.1, target_length=random.randint(10, 40), unit=TextLengthUnitEnum.WORDS),
-        MatchLengthCriteria(penalty=0.1, target_length=random.randint(40, 150), unit=TextLengthUnitEnum.CHARACTERS)
+        MatchLengthCriteria(
+            penalty=0.1,
+            target_length=random.randint(10, 40),
+            unit=TextLengthUnitEnum.WORDS,
+        ),
+        MatchLengthCriteria(
+            penalty=0.1,
+            target_length=random.randint(40, 150),
+            unit=TextLengthUnitEnum.CHARACTERS,
+        ),
     ]
 
     sampled_criterias = random.sample(possible_criterias, 1)
@@ -151,8 +167,16 @@ def create_qg_task(base_text: str, index: int) -> QuestionGenerationTask:
 
 def create_qa_task(base_text: str, index: int) -> QuestionAnswerTask:
     possible_criterias = [
-        MatchLengthCriteria(penalty=0.1,target_length=random.randint(50, 200),unit=TextLengthUnitEnum.WORDS),
-        MatchLengthCriteria(penalty=0.1,target_length=random.randint(4, 8),unit=TextLengthUnitEnum.SENTENCES)
+        MatchLengthCriteria(
+            penalty=0.1,
+            target_length=random.randint(50, 200),
+            unit=TextLengthUnitEnum.WORDS,
+        ),
+        MatchLengthCriteria(
+            penalty=0.1,
+            target_length=random.randint(4, 8),
+            unit=TextLengthUnitEnum.SENTENCES,
+        ),
     ]
 
     sampled_criterias = random.sample(possible_criterias, 1)
