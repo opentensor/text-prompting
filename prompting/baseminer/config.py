@@ -199,12 +199,6 @@ def get_config() -> "bt.Config":
         help="If True, the miner doesnt start the axon.",
         default=False,
     )
-    parser.add_argument(
-        "--miner.no_register",
-        action="store_true",
-        help="If True, the miner doesnt register its wallet.",
-        default=False,
-    )
 
     # Mocks.
     parser.add_argument(
