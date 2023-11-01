@@ -60,7 +60,7 @@ from prompting.validators.reward import (
 from prompting.validators.penalty import (
     TaskValidationPenaltyModel,
     KeywordMatchPenaltyModel,
-    SentenceMatchPenaltyModel,
+    ContentMatchPenaltyModel,
 )
 
 
@@ -195,7 +195,7 @@ class neuron:
             ]
             self.penalty_functions = [
                 TaskValidationPenaltyModel(max_penalty=0.1),
-                SentenceMatchPenaltyModel(max_penalty=0.1),
+                ContentMatchPenaltyModel(max_penalty=0.1),
                 KeywordMatchPenaltyModel(max_penalty=1),
             ]
             bt.logging.debug(str(self.reward_functions))
@@ -278,7 +278,7 @@ class neuron:
 
             self.penalty_functions = [
                 TaskValidationPenaltyModel(max_penalty=0.1),
-                SentenceMatchPenaltyModel(max_penalty=0.1),
+                ContentMatchPenaltyModel(max_penalty=0.1),
                 KeywordMatchPenaltyModel(max_penalty=1),
             ]
 

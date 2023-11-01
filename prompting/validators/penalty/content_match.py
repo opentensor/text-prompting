@@ -22,7 +22,7 @@ from prompting.validators.tasks import Task
 from prompting.validators.penalty.penalty import BasePenaltyModel, PenaltyModelType
 
 
-class SentenceMatchPenaltyModel(BasePenaltyModel):
+class ContentMatchPenaltyModel(BasePenaltyModel):
     @property
     def name(self) -> str:
         return PenaltyModelType.sentence_match_penalty.value
