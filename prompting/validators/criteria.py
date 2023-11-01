@@ -100,12 +100,14 @@ class MatchLengthCriteria(TaskCriterion):
         for idx, completion in enumerate(completions):
             completion_length = self._get_completion_length(completion)
             if completion_length != self.target_length:
-                # Scales the penalty using a quadratic function based on the deviation of the response length from the target length.
-                # The penalty is designed to be gentler on smaller deviations and steeper on larger deviations from the target length.
-                # The computed penalty is capped between 0 and 1.
-                penalty_scale_factor = np.abs(
-                    1 - (completion_length / self.target_length) ** 2
-                ).clip(0, 1)
+                # Computes the relative error as the deviation of the response length from the target length, normalized by the target length.
+                # Scales the penalty using an exponential function based on this relative error.
+                # The penalty starts off small for minor deviations but increases rapidly for larger deviations.
+                # The formula ensures that the penalty lies between 0 and 1.
+                relative_error = (
+                    self.target_length - completion_length
+                ) / self.target_length
+                penalty_scale_factor = 1 - np.exp(-10 * relative_error**2)
 
                 scaled_penalty = self.penalty * penalty_scale_factor
                 penalties[idx] = scaled_penalty
