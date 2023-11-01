@@ -135,8 +135,8 @@ def create_summarization_task(base_text: str) -> SummaryTask:
 
 def create_qg_task(base_text: str, index: int) -> QuestionGenerationTask:
     possible_criterias = [
-        MatchLengthCriteria(penalty=0.1, target_length=random.randint(25, 50), unit=TextLengthUnitEnum.WORDS),
-        MatchLengthCriteria(penalty=0.1, target_length=random.randint(125, 250), unit=TextLengthUnitEnum.CHARACTERS)
+        MatchLengthCriteria(penalty=0.1, target_length=random.randint(10, 40), unit=TextLengthUnitEnum.WORDS),
+        MatchLengthCriteria(penalty=0.1, target_length=random.randint(40, 150), unit=TextLengthUnitEnum.CHARACTERS)
     ]
 
     sampled_criterias = random.sample(possible_criterias, 1)
