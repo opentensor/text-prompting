@@ -64,7 +64,7 @@ class MatchLengthCriteria(TaskCriterion):
 
     def _count_sentences(self, text):
         # Define str pattern to match
-        pattern = re.findall(r"(?<![A-Z])[\.\?!](?:\s|$)", text)
+        pattern = r"(?<![A-Z])[\.\?!](?:\s|$)"
 
         # Find all matches
         sentences = re.findall(pattern, text)
