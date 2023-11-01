@@ -62,16 +62,35 @@ class MatchLengthCriteria(TaskCriterion):
     target_length: int = 100
     unit: TextLengthUnitEnum = TextLengthUnitEnum.WORDS
 
+    def _count_sentences(self, text):
+        # Regex explanation:
+        # \b[A-Z]: Match an uppercase letter at the beginning of a word (assumed start of a sentence).
+        # (?:[a-zA-Z]\. ){0,2}: Match 0-2 occurrences of an abbreviation-like pattern (single letter followed by a dot and space).
+        # (?:[a-zA-Z]+\s+){1,}: Match at least one word followed by one or more whitespace characters.
+        # [a-zA-Z]+: Match the last word before the end punctuation.
+        # [.?!]: Match sentence-ending punctuation.
+        # (?!\w): Negative lookahead to ensure the punctuation is not followed by an alphanumeric character (part of an abbreviation).
+        # The pattern ignores common abbreviations by not counting them as sentence terminators.
+        pattern = r'\b[A-Z](?:[a-zA-Z]\. ){0,2}(?:[a-zA-Z]+\s+){1,}[a-zA-Z]+[.?!](?!\w)'
+
+        # Find all matches
+        sentences = re.findall(pattern, text)
+
+        # Return the count
+        return len(sentences)
+
     def _get_completion_length(self, response: str) -> int:
         unit_to_split_pattern = {
-            TextLengthUnitEnum.CHARACTERS: None,
+            TextLengthUnitEnum.CHARACTERS: None,            
+            TextLengthUnitEnum.SENTENCES: None,
             TextLengthUnitEnum.WORDS: r"\s+",
-            TextLengthUnitEnum.SENTENCES: r"\.\s+",
             TextLengthUnitEnum.PARAGRAPHS: r"\n\n+",
         }
 
         if self.unit == TextLengthUnitEnum.CHARACTERS:
             return len(response)
+        elif self.unit == TextLengthUnitEnum.SENTENCES:
+            return self._count_sentences(response)
         else:
             split_pattern = unit_to_split_pattern[self.unit]
             return len(re.split(split_pattern, response.strip()))
