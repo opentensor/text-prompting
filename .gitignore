@@ -162,4 +162,4 @@ cython_debug/
 localtesting/
 
 # pm2 config file
-./app.config.js
+app.config.js
