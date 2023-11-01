@@ -28,7 +28,7 @@ def run(self):
     Initiates and manages the main loop for the miner on the Bittensor network.
 
     This function performs the following primary tasks:
-    1. Optionally registers the miner's wallet with the network.
+    1. Check for registration on the Bittensor network.
     2. Attaches the miner's forward, blacklist, and priority functions to its axon.
     3. Starts the miner's axon, making it active on the network.
     4. Regularly updates the metagraph with the latest network state.
@@ -48,12 +48,16 @@ def run(self):
         KeyboardInterrupt: If the miner is stopped by a manual interruption.
         Exception: For unforeseen errors during the miner's operation, which are logged for diagnosis.
     """
-    # --- Optionally register the wallet.
-    if not self.config.miner.no_register:
-        bt.logging.info(
-            f"Registering wallet: {self.wallet} on netuid {self.config.netuid}"
+    # --- Check for registration.
+    if not self.subtensor.is_hotkey_registered(
+        netuid=self.config.netuid,
+        hotkey=self.wallet.hotkey.ss58_address,
+    ):
+        bt.logging.error(
+            f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}"
+            f"Please register the hotkey using `btcli subnets register` before trying again"
         )
-        self.subtensor.register(netuid=self.config.netuid, wallet=self.wallet)
+        exit()
 
     # Serve passes the axon information to the network + netuid we are hosting on.
     # This will auto-update if the axon port of external ip have changed.

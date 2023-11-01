@@ -57,7 +57,7 @@ btcli wallet faucet --wallet.name validator --subtensor.network test
 Register your UID on the test network:
 
 ```sh
-btcli wallet recycle_register --subtensor.network test
+btcli subnets register --subtensor.network test
 ```
 
 ## 5. Start the Process
