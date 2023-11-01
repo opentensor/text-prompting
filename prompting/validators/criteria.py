@@ -112,20 +112,20 @@ class LayoutTypeEnum(Enum):
 
 @dataclass
 class MatchLayoutCriteria(TaskCriterion):
-    text: str = "Your response must be in the form of a {format_type}{w}{fields}"
+    text: str = "Your response must be in the form of a {format_type}{fields}"
     penalty: float = 0.1
     format_type: LayoutTypeEnum = LayoutTypeEnum.JSON
     num_fields: int = 0
     fields : str = " with {num_fields} fields"
 
-    def is_json(text):
+    def is_json(self, text):
         try:
             json.loads(text)
             return True
         except ValueError:
             return False
         
-    def is_dictionary(text):
+    def is_dictionary(self, text):
         try:
             if type(ast.literal_eval(text)) == dict:
                 return True
@@ -134,13 +134,13 @@ class MatchLayoutCriteria(TaskCriterion):
         except (ValueError, SyntaxError):
             return False
 
-    def is_numbered_list(input_string):
+    def is_numbered_list(self, input_string):
         pattern = r'^\d.*\n?$'
         lines = input_string.split('\n')
         return all(re.match(pattern, line) for line in lines)
     
-    def is_bullet_point_list(input_string):
-        pattern = r'^\s*[-*+]\s.*\n?(\s*[-*+]\s.*\n?)*$'
+    def is_bullet_point_list(self, input_string):
+        pattern = r'^\s*[-*+]\s*.*\n?(\s*[-*+]\s.*\n?)*$'
         return bool(re.match(pattern, input_string))
 
     def _get_format_match(self, response : str) -> bool:
