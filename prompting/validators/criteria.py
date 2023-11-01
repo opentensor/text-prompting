@@ -64,8 +64,8 @@ class MatchLengthCriteria(TaskCriterion):
     def _get_completion_length(self, response: str) -> int:
         unit_to_split_pattern = {
             TextLengthUnitEnum.CHARACTERS: None,
-            TextLengthUnitEnum.WORDS: r" +",
-            TextLengthUnitEnum.SENTENCES: r"\. +",
+            TextLengthUnitEnum.WORDS: r"\s+",
+            TextLengthUnitEnum.SENTENCES: r"\.\s+",
             TextLengthUnitEnum.PARAGRAPHS: r"\n\n+",
         }
 
