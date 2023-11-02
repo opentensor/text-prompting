@@ -47,6 +47,9 @@ class MockGatingModel(BaseGatingModel):
 
 
 class MockRewardModel(BaseRewardModel):
+    question_blacklist = []
+    answer_blacklist = []
+
     @property
     def name(self) -> str:
         return self.mock_name
