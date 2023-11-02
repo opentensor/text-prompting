@@ -30,6 +30,7 @@ class RewardModelType(Enum):
     nsfw = "nsfw_filter"
     relevance = "relevance_filter"
     task_validator = "task_validator_filter"
+    keyword_match = "keyword_match_penalty"
 
 
 @dataclass(frozen=True)
@@ -38,8 +39,8 @@ class DefaultRewardFrameworkConfig:
     Note: All the weights should add up to 1.0.
     """
 
-    dpo_model_weight: float = 0.2
-    rlhf_model_weight: float = 0.4
-    reciprocate_model_weight: float = 0.4
+    dpo_model_weight: float = 0.425
+    rlhf_model_weight: float = 0.15
+    reciprocate_model_weight: float = 0.425
     dahoas_model_weight: float = 0
     prompt_model_weight: float = 0

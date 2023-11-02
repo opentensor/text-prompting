@@ -68,7 +68,7 @@ class DiversityRewardModel(BaseRewardModel):
         self.history_reward_bottom_k = 2
         self.historic_embeddings = torch.tensor([]).to(self.device)
         self.history_range = (500, 15500)
-        self.boundary = 0.5
+        self.boundary = 0.2
 
     def get_embeddings(self, sentences: List[str]) -> "torch.FloatTensor":
         """Runs a forward pass through the model.
