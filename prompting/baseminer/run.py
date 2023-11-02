@@ -51,7 +51,7 @@ def run(self):
     # --- Check for registration.
     if not self.subtensor.is_hotkey_registered(
         netuid=self.config.netuid,
-        hotkey=self.wallet.hotkey.ss58_address,
+        hotkey_ss58=self.wallet.hotkey.ss58_address,
     ):
         bt.logging.error(
             f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}"
