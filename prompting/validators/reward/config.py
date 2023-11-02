@@ -30,6 +30,7 @@ class RewardModelType(Enum):
     nsfw = "nsfw_filter"
     relevance = "relevance_filter"
     task_validator = "task_validator_filter"
+    keyword_match = "keyword_match_penalty"
 
 
 @dataclass(frozen=True)
