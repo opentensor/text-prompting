@@ -89,7 +89,7 @@ class Miner(ABC):
 
         # subtensor manages the blockchain connection, facilitating interaction with the Bittensor blockchain.
         self.subtensor = subtensor or bt.subtensor(config=self.config)
-        bt.logging.info(f"Subtensor: {subtensor}")
+        bt.logging.info(f"Subtensor: {self.subtensor}")
 
         # metagraph provides the network's current state, holding state about other participants in a subnet.
         self.metagraph = self.subtensor.metagraph(self.config.netuid)
