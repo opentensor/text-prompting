@@ -39,8 +39,8 @@ class DefaultRewardFrameworkConfig:
     Note: All the weights should add up to 1.0.
     """
 
-    dpo_model_weight: float = 0.2
-    rlhf_model_weight: float = 0.4
-    reciprocate_model_weight: float = 0.4
+    dpo_model_weight: float = 0.425
+    rlhf_model_weight: float = 0.15
+    reciprocate_model_weight: float = 0.425
     dahoas_model_weight: float = 0
     prompt_model_weight: float = 0
