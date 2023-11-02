@@ -15,21 +15,19 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+import re
 import torch
 from typing import List
-from .config import RewardModelType
-from .reward import BaseRewardModel
+from prompting.validators.tasks import Task
+from prompting.validators.penalty.penalty import BasePenaltyModel, PenaltyModelType
 
 
-class TaskValidator(BaseRewardModel):
+class KeywordMatchPenaltyModel(BasePenaltyModel):
     @property
     def name(self) -> str:
-        return RewardModelType.task_validator.value
+        return PenaltyModelType.keyword_match_penalty.value
 
-    def __init__(self):
-        super().__init__()
-
-    def reward(self, prompt: str, completion: str, name: str) -> float:
+    def check_exploits_keywords(self, completion: str, name: str) -> float:
         summary_keywords = ["Summary:", "Paraphrase:", "Paraphrasing:", "Paraphrased:"]
         question_keywords = ["Question:", "Query:", "Q:"]
         answer_keywords = ["Answer:", "Response:", "A:", "Completion:"]
@@ -54,28 +52,36 @@ class TaskValidator(BaseRewardModel):
         if (
             is_summarization_prompt or is_question_prompt
         ) and completion_contains_answer:
-            return 0.0
+            return 1
 
         if (
             is_summarization_prompt or is_answer_prompt
         ) and completion_contains_question:
-            return 0.0
+            return 1
 
         if not is_summarization_prompt and completion_contains_summary:
-            return 0.0
+            return 1
 
-        return 1
+        # Patterns defined accordingly to task orchestrator in forward function.
+        # Punishes responses that copy the context
+        text_separation_patterns = [
+            r"#+[\d\s]*QUESTION[\d\s]*:",
+            r"f\"\\n#+[\d\s]*ANSWER[\d\s]*:",
+            r"#+[\d\s]*SUMMARY[\d\s]*CONTEXT:",
+        ]
+        for pattern in text_separation_patterns:
+            if re.search(pattern, completion, re.IGNORECASE):
+                return 1
 
-    def get_rewards(
-        self, prompt: str, completions: List[str], name: str
+        return 0
+
+    def calculate_penalties(
+        self, task: Task, completions: List[str]
     ) -> torch.FloatTensor:
         return torch.tensor(
-            [self.reward(prompt, completion, name) for completion in completions],
+            [
+                self.check_exploits_keywords(completion, task.task_name)
+                for completion in completions
+            ],
             dtype=torch.float32,
         )
-
-    def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
-        return rewards
-
-    def reset(self):
-        pass
