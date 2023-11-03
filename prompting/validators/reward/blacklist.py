@@ -61,7 +61,7 @@ class Blacklist(BaseRewardModel):
         self._last_update = 0
         self._running_size = 0
 
-        self.support = 0.01 # If it appear in 1% of the completions, then it would be taken to calculate the significance score.
+        self.support = 0.01 
         self.error = 0.000005 # Should be as small as possible, but decreasing it further will increase memory usage. 
         self.window = math.ceil(1/self.error) # Window size, counter would get pruned once for each window. 
         self.b_current = 1 # Bucket index.
