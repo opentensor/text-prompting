@@ -47,7 +47,7 @@ class Blacklist(BaseRewardModel):
         super().__init__()
 
         self.deque = deque(maxlen=max_size)
-        self.counter = Counter()
+        self.counter = {}
 
         self.n_min = n_min
         self.n_max = n_max
@@ -61,6 +61,12 @@ class Blacklist(BaseRewardModel):
         self._last_update = 0
         self._running_size = 0
 
+        self.support = 0.01 # if it appear in 1% of the completions, then would be considered an exploit
+        self.error = 0.000005 # should be as small as possible with memory control
+        self.window = math.ceil(1/blacklist_lt.error)
+        self.b_current = 1
+        self.num_ngram = 0
+        self.num_completion = 0
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
 
 
@@ -108,32 +114,36 @@ class Blacklist(BaseRewardModel):
         return ngrams
 
     def _add_ngrams(self, ngrams: List[tuple]):
-        """Adds n-grams to counter and deque, removing old n-grams if necessary (memory-based sliding window)
+        """Adds n-grams to counter, removing old n-grams periodically.
 
         Args:
             ngrams (List[tuple]): List of n-gram tuples
         """
 
-        # Anticipate the over-capacity and adjust the number of n-grams to remove
-        anticipated_size = len(ngrams) + len(self.deque)
-        num_to_remove = max(anticipated_size - self.deque.maxlen, 0)
+        for ngram in ngrams:
+            if ngram in self.counter:
+                self.counter[ngram][0] += 1
+            else: 
+                self.counter[ngram] = [1, self.b_current - 1]
+            
+            # Start the prune procedure periodically.
+            self.num_ngram += 1
+            if self.N % self.window == 0:
+                self.b_current = math.ceil(self.num_ngram / self.window) 
+                self.prune()
+        
+        self.num_completion += 1
 
-        # Remove old n-grams from counter and deque
-        if num_to_remove > 0:
-            for _ in range(num_to_remove):
-                if not self.deque:  # Stop if deque is empty
-                    break
-                old_ngram = self.deque.popleft()
-                self.counter[old_ngram] -= 1
-                if self.counter[old_ngram] == 0:
-                    del self.counter[old_ngram]
-
-        # Add new n-grams
-        self.deque.extend(ngrams)
-        self.counter.update(ngrams)
-
-        # Update running size (warning: this will grow indefinitely)
-        self._running_size += len(ngrams)
+    def prune(self):
+        """Prune the counter when the count is smaller then bucket index.  
+        """
+        prune_ele = []
+        for ele, (frequence, max_error) in self.counter.items():
+            if frequence + max_error <= self.b_current:
+                prune_ele.append(ele)
+        
+        for ele in prune_ele:
+            del self.counter[ele]  
 
     def calculate_significance(self) -> dict:
         """Calculate significance of all n-grams in counter. By construction, n-grams with count 1 will have significance 0.
@@ -144,9 +154,10 @@ class Blacklist(BaseRewardModel):
 
         significance_scores = {}
         for ngram, count in self.counter.items():
-
+            if count[0] + count[1] < max(self.support * self.num_completion, self.b_current + 1):
+                continue
             # calculate significance score for ngram
-            significance_scores[ngram] = self.A ** (len(ngram) - 1) * (count - 1)
+            significance_scores[ngram] = self.A ** (len(ngram) - 1) * ((count[0] + count[1]) / self.num_completion) * 100
 
         self._last_update = self._running_size
 
@@ -173,7 +184,7 @@ class Blacklist(BaseRewardModel):
         Returns:
             dict: Sorted dictionary of n-gram tuples and their counts
         """
-        return self.counter.most_common(n)
+        return sorted(self.counter.items(), key=lambda x: x[1][0] + x[1][1], reverse=True)[:n]
 
     def most_significant(self, n:int = 10, force_update:bool = True) -> dict:
         """Get most significant n-grams in queue based on significance scores
