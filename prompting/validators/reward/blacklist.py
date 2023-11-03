@@ -22,6 +22,7 @@ from typing import List
 from .config import RewardModelType
 from .reward import BaseRewardModel
 from collections import Counter, deque
+from transformers import BertTokenizer
 
 # TODO: Use CLI arguments to set blacklist values: the most important being the boundary value and max_size
 class Blacklist(BaseRewardModel):
@@ -60,6 +61,8 @@ class Blacklist(BaseRewardModel):
         self._last_update = 0
         self._running_size = 0
 
+        self.tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
+
 
     def add(self, texts: List[str]):
         """Extract and add n-grams from a list of texts to counter
@@ -86,13 +89,14 @@ class Blacklist(BaseRewardModel):
             list: List of n-gram tuples
 
         TODO: Tokenize text so to reduce memory usage. ie. ('hello','world') -> (324, 531)
+        TODO: Replace this with nltk everygram which is more efficient
         """
 
         if self.preprocess:
             # remove all punctuation
             text = self.preprocess.sub('', text)
 
-        words = text.split()
+        words = self.tokenizer(text.lower())['input_ids'][1:-1]
 
         if self.word_limit is not None:
             words = words[:self.word_limit]
