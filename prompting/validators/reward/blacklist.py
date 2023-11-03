@@ -61,10 +61,10 @@ class Blacklist(BaseRewardModel):
         self._last_update = 0
         self._running_size = 0
 
-        self.support = 0.01 # if it appear in 1% of the completions, then would be considered an exploit
-        self.error = 0.000005 # should be as small as possible with memory control
-        self.window = math.ceil(1/blacklist_lt.error)
-        self.b_current = 1
+        self.support = 0.01 # If it appear in 1% of the completions, then it would be taken to calculate the significance score.
+        self.error = 0.000005 # Should be as small as possible, but decreasing it further will increase memory usage. 
+        self.window = math.ceil(1/self.error) # Window size, counter would get pruned once for each window. 
+        self.b_current = 1 # Bucket index.
         self.num_ngram = 0
         self.num_completion = 0
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
@@ -115,6 +115,8 @@ class Blacklist(BaseRewardModel):
 
     def _add_ngrams(self, ngrams: List[tuple]):
         """Adds n-grams to counter, removing old n-grams periodically.
+        Counting and pruning method based on Lossy counter.
+        Reference: https://files.ifi.uzh.ch/dbtg/sdbs13/T01.3.pdf
 
         Args:
             ngrams (List[tuple]): List of n-gram tuples
@@ -124,6 +126,7 @@ class Blacklist(BaseRewardModel):
             if ngram in self.counter:
                 self.counter[ngram][0] += 1
             else: 
+                # Store the tuple (frequence, max_error)
                 self.counter[ngram] = [1, self.b_current - 1]
             
             # Start the prune procedure periodically.
