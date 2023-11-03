@@ -31,7 +31,7 @@ class Blacklist(BaseRewardModel):
     def name(self) -> str:
         return RewardModelType.blacklist.value
 
-    def __init__(self, boundary:float = 1000, max_size:int = 1_000_000, n_min:int = 5, n_max:int = 14, word_limit:int = 2000, A:float = 1.3, preprocess:str = '[^(\\w|\\s)]'):
+    def __init__(self, boundary:float = 3, max_size:int = 1_000_000, n_min:int = 5, n_max:int = 14, word_limit:int = 2000, A:float = 1.3, preprocess:str = '[^(\\w|\\s)]'):
         """N-gram blacklist reward model which penalizes overused phrases in the network
 
         Args:
