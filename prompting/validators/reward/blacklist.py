@@ -18,6 +18,8 @@
 
 import re
 import torch
+import math
+from fuzzywuzzy import fuzz
 from typing import List
 from .config import RewardModelType
 from .reward import BaseRewardModel
@@ -31,18 +33,27 @@ class Blacklist(BaseRewardModel):
     def name(self) -> str:
         return RewardModelType.blacklist.value
 
-    def __init__(self, boundary:float = 3, max_size:int = 1_000_000, n_min:int = 5, n_max:int = 14, word_limit:int = 2000, A:float = 1.3, preprocess:str = '[^(\\w|\\s)]'):
+    def __init__(self, 
+        boundary:float = 3, 
+        partia_ratio_boundary:float = 90, 
+        max_size:int = 1_000_000, 
+        n_min:int = 5, 
+        n_max:int = 14, 
+        word_limit:int = 2000, 
+        A:float = 1.3, 
+        preprocess:str = '[^(\\w|\\s)]'
+    ):
         """N-gram blacklist reward model which penalizes overused phrases in the network
 
         Args:
-            boundary (float, optional): Cutoff for flagging completions and giving zero reward. Defaults to 1000.
+            boundary (float, optional): Cutoff for flagging completions and giving zero reward. Defaults to 3.
+            partial_ratio_boundary (float, optional): Cutoff for flagging completions in matching completion with counter and giving zero reward. Defaults to 90.
             max_size (int, optional): Maximum size of sliding window to use for aggregating ngrams. Defaults to 1_000_000.
             n_min (int, optional): Smallest ngram size. Defaults to 5.
             n_max (int, optional): Largest ngram size. Defaults to 14.
             word_limit (int, optional): Maximum word length, to prevent extremely long completions from overworking the queue. Defaults to 2000.
-            A (float, optional): Exponent used in significance scoring, smaller A gives more weight to smaller ngrams. Values of 1.2-2 are recommended. Defaults to 1.3.
+            A (float, optional): Exponent used in significance scoring, smaller A gives more weight to smaller ngrams. Values of 1.1-2 are recommended. Defaults to 1.1.
             preprocess (str, optional): Regex preprocessing string to make text more uniform. Defaults to '[^(\w|\s)]'.
-
         """
         super().__init__()
 
@@ -56,10 +67,10 @@ class Blacklist(BaseRewardModel):
         self.significance_scores = {}  # Store significance scores
         self.A = A
         self.boundary = boundary
+        self.partial_ratio_boundary = partial_ratio_boundary
 
         self.preprocess = re.compile(preprocess) if preprocess else None
         self._last_update = 0
-        self._running_size = 0
 
         self.support = 0.01 
         self.error = 0.000005 # Should be as small as possible, but decreasing it further will increase memory usage. 
@@ -68,6 +79,9 @@ class Blacklist(BaseRewardModel):
         self.num_ngram = 0
         self.num_completion = 0
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
+        
+        # windowling 
+        # what if every 6 hours, num_ngram / num_completion / num_counter / b_current * 0.5, 
 
 
     def add(self, texts: List[str]):
@@ -131,7 +145,7 @@ class Blacklist(BaseRewardModel):
             
             # Start the prune procedure periodically.
             self.num_ngram += 1
-            if self.N % self.window == 0:
+            if self.num_ngram % self.window == 0:
                 self.b_current = math.ceil(self.num_ngram / self.window) 
                 self.prune()
         
@@ -157,12 +171,11 @@ class Blacklist(BaseRewardModel):
 
         significance_scores = {}
         for ngram, count in self.counter.items():
-            if count[0] + count[1] < max(self.support * self.num_completion, self.b_current + 1):
-                continue
+            if count[0] + count[1] > max(self.support * self.num_completion, self.b_current + 1):
             # calculate significance score for ngram
-            significance_scores[ngram] = self.A ** (len(ngram) - 1) * ((count[0] + count[1]) / self.num_completion) * 100
+                significance_scores[self.tokenizer.decode(ngram)] = self.A ** (len(ngram) - 1) * ((count[0] + count[1]) / self.num_completion) * 100
 
-        self._last_update = self._running_size
+        self._last_update = self.num_ngram
 
         return significance_scores
 
@@ -173,7 +186,7 @@ class Blacklist(BaseRewardModel):
             dict: Dictionary of n-gram tuples and their significance scores
         """
 
-        if self._last_update != self._running_size:
+        if self._last_update != self.num_ngram:
             self.significance_scores = self.calculate_significance()
 
         return self.significance_scores
@@ -188,7 +201,8 @@ class Blacklist(BaseRewardModel):
             dict: Sorted dictionary of n-gram tuples and their counts
         """
         return sorted(self.counter.items(), key=lambda x: x[1][0] + x[1][1], reverse=True)[:n]
-
+         
+    
     def most_significant(self, n:int = 10, force_update:bool = True) -> dict:
         """Get most significant n-grams in queue based on significance scores
 
@@ -202,7 +216,6 @@ class Blacklist(BaseRewardModel):
 
 
         scores = self.get_significance() if force_update else self.significance_scores
-
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:n]
 
     def reward(self, prompt: str, completion: str, name: str) -> float:
@@ -220,17 +233,16 @@ class Blacklist(BaseRewardModel):
         if completion in prompt:
             return 0.0
 
-        # Extract n-grams from completion
-        ngrams = self.extract_ngrams(completion.lower())
         # Get significance scores
         scores = self.get_significance()
 
         # Check if any n-grams have significance above the boundary
-        for ngram in ngrams:
+        for ngram, score in scores: 
             if scores.get(ngram) > self.boundary:
-                return 1
+                if fuzz.partial_ratio(ngram, completion.lower()) > self.partial_ratio_boundary:
+                    return 0
 
-        return 0
+        return 1
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
