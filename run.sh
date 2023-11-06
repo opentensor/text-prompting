@@ -5,7 +5,7 @@ script="neurons/validators/validator.py"
 autoRunLoc=$(readlink -f "$0")
 proc_name="text_prompt_validators_main_process" 
 args=()
-version_location="./prompting/__init__.py"
+version_location="./prompting/validators/__init__.py"
 version="__version__"
 
 old_args=$@
@@ -229,7 +229,7 @@ if [ "$?" -eq 1 ]; then
         if [ -d "./.git" ]; then
 
             # check value on github remotely
-            latest_version=$(check_variable_value_on_github "opentensor/validators" "openvalidators/__init__.py" "__version__ ")
+            latest_version=$(check_variable_value_on_github "opentensor/text-prompting" "prompting/validators/__init__.py" "__version__ ")
 
             # If the file has been updated
             if version_less_than $current_version $latest_version; then
