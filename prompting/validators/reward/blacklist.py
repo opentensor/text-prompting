@@ -41,6 +41,7 @@ class Blacklist(BaseRewardModel):
         n_max:int = 14, 
         word_limit:int = 2000, 
         A:float = 1.3, 
+        half_life: int = 20000
         preprocess:str = '[^(\\w|\\s)]'
     ):
         """N-gram blacklist reward model which penalizes overused phrases in the network
@@ -53,6 +54,7 @@ class Blacklist(BaseRewardModel):
             n_max (int, optional): Largest ngram size. Defaults to 14.
             word_limit (int, optional): Maximum word length, to prevent extremely long completions from overworking the queue. Defaults to 2000.
             A (float, optional): Exponent used in significance scoring, smaller A gives more weight to smaller ngrams. Values of 1.1-2 are recommended. Defaults to 1.1.
+            half_life (int, optional): Half life of the counter. ie. When the number of completions processed > half life, then put all the counters in half.
             preprocess (str, optional): Regex preprocessing string to make text more uniform. Defaults to '[^(\w|\s)]'.
         """
         super().__init__()
@@ -79,7 +81,9 @@ class Blacklist(BaseRewardModel):
         self.num_ngram = 0
         self.num_completion = 0
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
-        
+
+        self.half_life = half_life # Counter will be halfed after half_life number of completions have been processed  
+
         # windowling 
         # what if every 6 hours, num_ngram / num_completion / num_counter / b_current * 0.5, 
 
@@ -150,6 +154,8 @@ class Blacklist(BaseRewardModel):
                 self.prune()
         
         self.num_completion += 1
+        if self.num_completion > self.half_life:
+            self.set_counter_to_half()
 
     def prune(self):
         """Prune the counter when the count is smaller then bucket index.  
@@ -217,6 +223,12 @@ class Blacklist(BaseRewardModel):
 
         scores = self.get_significance() if force_update else self.significance_scores
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:n]
+
+    def set_counter_to_half(self):
+        self.b_current /= 2 # Bucket index.
+        self.num_ngram /= 2
+        self.num_completion /= 2
+        self.counter = { tokens: [count[0]/2, cunt[1]/2] for tokens, count in self.counter.items()}
 
     def reward(self, prompt: str, completion: str, name: str) -> float:
         """Reward function for blacklist reward model. Returns 1 if completion contains an n-gram with significance above the boundary, 0 otherwise.
