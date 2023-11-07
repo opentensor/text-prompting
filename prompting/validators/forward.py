@@ -257,9 +257,6 @@ async def forward(self):
         )
         exclude += answer_event["uids"]
 
-        self.blacklist.question_blacklist.append(followup_event["best"])
-        self.blacklist.answer_blacklist.append(answer_event["best"])
-
         if k == 0:
             # Extend the base text with the best answer.
             base_text = (
