@@ -69,7 +69,7 @@ class RelevanceRewardModel(BaseRewardModel):
         self.bounds = [-0.0246, 0.3]
 
     def parse_reward_results(self, reward_results):
-        field_names = [field.name for field in fields(RelevanceRewardModel.RewardResult)]
+        field_names = [field.name for field in fields(self.RewardResult)]
         
         reward_results = [asdict(reward_result).values() for reward_result in reward_results]
 

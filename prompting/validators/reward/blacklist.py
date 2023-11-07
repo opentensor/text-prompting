@@ -294,8 +294,8 @@ class Blacklist(BaseRewardModel):
         result.reward = 1
         return result
 
-    def parse_reward_results(reward_results):
-        field_names = [field.name for field in fields(Blacklist.RewardResult)]
+    def parse_reward_results(self, reward_results):
+        field_names = [field.name for field in fields(self.RewardResult)]
         
         reward_results = [asdict(reward_result).values() for reward_result in reward_results]
 
@@ -314,7 +314,7 @@ class Blacklist(BaseRewardModel):
         reward_results = [self.reward(prompt, completion, name) for completion in completions]
 
         # Parse the result and generate an event to be logged.
-        reward, reward_event = parse_reward_results(reward_results)
+        reward, reward_event = self.parse_reward_results(reward_results)
 
         reward = torch.tensor(reward, dtype=torch.float32)
 
