@@ -176,6 +176,16 @@ class Blacklist(BaseRewardModel):
         for ele in prune_ele:
             del self.counter[ele]  
 
+    def reset(self):
+        """Reset counters to initial values.
+        """
+        self.num_ngram = 0
+        self.num_completion = 0 
+        self.w_current = 1 
+        self.counter = {}
+        self.significance_scores = {}  
+        self._last_update = 0
+
     def calculate_significance(self) -> dict:
         """Calculate significance of all n-grams in counter. By construction, n-grams with count 1 will have significance 0.
 
