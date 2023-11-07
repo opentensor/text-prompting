@@ -23,6 +23,7 @@ from .reward import BaseRewardModel
 from transformers import AutoTokenizer, AutoModel
 from torchmetrics.functional import pairwise_cosine_similarity
 import torch.nn.functional as F
+from dataclasses import dataclass, asdict
 
 
 def mean_pooling(model_output, attention_mask):
@@ -48,6 +49,12 @@ def mean_pooling(model_output, attention_mask):
 
 
 class RelevanceRewardModel(BaseRewardModel):
+    @dataclass
+    class RewardResult():
+        reward: int = 1
+        bert_relevancy_score: float = None
+        mpnet_relevancy_score: float = None
+
     @property
     def name(self) -> str:
         return RewardModelType.relevance.value
@@ -64,28 +71,53 @@ class RelevanceRewardModel(BaseRewardModel):
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
     ) -> torch.FloatTensor:
-        return torch.tensor(
-            [self.reward(prompt, completion, name) for completion in completions],
-            dtype=torch.float32,
-        ).to(self.device)
+
+        # All reward result for each completions.
+        reward_results = [asdict(self.reward(prompt, completion, name)).values() for completion in completions]
+
+        # Transpose the reward results.
+        rewards, bert_relevancy_scores, mpnet_relevancy_scores = list(zip(*reward_results))
+                
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
+
+        reward_event = {
+            'bert_relevancy_score': bert_relevancy_scores,
+            'mpnet_relevancy_scores': mpnet_relevancy_scores
+        }
+
+        return rewards, reward_event
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards
 
     def reward(self, prompt: str, completion: str, name: str) -> float:
+
+        result = RelevanceRewardModel.RewardResult()
+
         for i, model in enumerate(self.models):
             # rewards
             diff = model.reward(prompt, completion)
 
             # If a model returns 0, stop iterating and return 0
             if diff < self.bounds[i]:
-                return 0.0
+                result.reward = 0
+
+            if model.name == 'relevance_bert':
+                result.bert_relevancy_score = diff
+            
+            elif model.name == 'relevance_mpnet':
+                result.mpnet_relevancy_score = diff
+        
         # If none of the models returned 0, return 1
-        return 1.0
+        return result
 
 
 class BertRelevanceRewardModel(BaseRewardModel):
     relevance_model_path = "bert-base-uncased"
+
+    @property
+    def name(self) -> str:
+        return RewardModelType.relevance_bert.value
 
     def __init__(self, device: str):
         super().__init__()
@@ -142,6 +174,10 @@ class BertRelevanceRewardModel(BaseRewardModel):
 class MpnetRelevenceModel(BaseRewardModel):
     diversity_model_path = "sentence-transformers/all-mpnet-base-v2"
 
+    @property
+    def name(self) -> str:
+        return RewardModelType.relevance_mpnet.value
+    
     def __init__(self, device: str):
         super().__init__()
         self.device = device
@@ -190,4 +226,4 @@ class MpnetRelevenceModel(BaseRewardModel):
         # Calculate the pairwise cosine similarity.
         similarity = pairwise_cosine_similarity(prompt_embed, embeddings)
 
-        return torch.abs(similarity)
+        return torch.abs(similarity).item()
