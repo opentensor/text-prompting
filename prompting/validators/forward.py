@@ -102,16 +102,17 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
         completion = response.completion.strip(".")
 
         if "followup" in task_name and len(completion) > 0:
+            # take maximum of 40 words
+            max_words = 40
             if "?" in completion:
                 # take first question that is found and only use the sentence before the question mark
                 completion = completion.split("?")[0].split(".")[-1]
+                response.completion = " ".join(completion.split(" ")[-max_words:]) + "?"
             else:
                 # otherwise take the last sentence
                 completion = completion.split(".")[-1].split(".")[-1]
-
-            # take maximum of 40 words
-            response.completion = " ".join(completion.split(" ")[-40:]) + "?"
-
+                response.completion = " ".join(completion.split(" ")[-max_words:])
+                        
     # Compute the rewards for the responses given the prompt.
     rewards: torch.FloatTensor = torch.zeros(len(responses), dtype=torch.float32).to(
         self.device
