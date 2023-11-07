@@ -23,7 +23,6 @@ from fuzzywuzzy import fuzz
 from typing import List
 from .config import RewardModelType
 from .reward import BaseRewardModel
-from collections import Counter, deque
 from transformers import BertTokenizer
 
 # TODO: Use CLI arguments to set blacklist values: the most important being the boundary value and max_size
@@ -34,8 +33,7 @@ class Blacklist(BaseRewardModel):
         return RewardModelType.blacklist.value
 
     def __init__(self, 
-        boundary:float = 3, 
-        max_size:int = 1_000_000, 
+        boundary:float = 6, 
         n_min:int = 5, 
         n_max:int = 14, 
         word_limit:int = 2000, 
@@ -44,7 +42,8 @@ class Blacklist(BaseRewardModel):
         partial_ratio_boundary: float = 95,
         half_life: int = 20000,
         support: float = 0.01,
-        error: float = 0.002,
+        error: float = 0.001,
+        memory_lim: int = 1_000_000
     ):
         """N-gram blacklist reward model which penalizes overused phrases in the network
 
@@ -60,10 +59,10 @@ class Blacklist(BaseRewardModel):
             half_life (int, optional): Half life of the counter. ie. When the number of completions processed > half life, then put all the counters in half.
             support (float, optional): The percentage of times that a phrase need to appear to get the phrase kept in counter. (support should be >> counter)
             error (float, optional): Error parameter for lossy sampling, should be as small as possible, further decreasing it further will increase memory usage. (support should be >> error )
+            memory_lim (int, optional): Max number of counter entry to save for memory protection.
         """
         super().__init__()
 
-        self.deque = deque(maxlen=max_size)
         self.counter = {}
 
         self.n_min = n_min
@@ -88,7 +87,7 @@ class Blacklist(BaseRewardModel):
         
         self.half_life = half_life  
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
-
+        self.memory_lim = memory_lim
 
     def add(self, texts: List[str]):
         """Extract and add n-grams from a list of texts to counter
@@ -158,7 +157,7 @@ class Blacklist(BaseRewardModel):
             self.prune()
         
         # Safety feature: prune when reached max memory size.
-        if len(blacklist_local.counter) > 1_000_000:
+        if len(self.counter) > self.memory_lim:
             self.w_current += 1
             self.prune()
         
@@ -236,8 +235,8 @@ class Blacklist(BaseRewardModel):
     def set_counter_to_half(self):
         """Set all the counters to half for a rolling window effect.
         """
-        self.num_ngram = match.ceil(self.num_ngram/2)
-        self.num_completion = match.ceil(self.num_completion/2) 
+        self.num_ngram = math.ceil(self.num_ngram/2)
+        self.num_completion = math.ceil(self.num_completion/2) 
         self.w_current = math.ceil(self.num_completion / self.window) 
         self.counter = { tokens: [ math.ceil(count[0]/2), math.ceil(count[1]/2)] for tokens, count in self.counter.items()}
 
@@ -261,8 +260,9 @@ class Blacklist(BaseRewardModel):
 
         # Check if any n-grams have significance above the boundary
         for ngram, score in scores.items(): 
-            if score > self.boundary:
-                if fuzz.partial_ratio(ngram, completion.lower()) > self.partial_ratio_boundary:
+            if (score > self.boundary and 
+                fuzz.partial_ratio(ngram, completion.lower()) > self.partial_ratio_boundary
+            ):
                     return 0
 
         return 1
