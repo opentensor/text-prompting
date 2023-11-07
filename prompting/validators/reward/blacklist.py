@@ -34,7 +34,7 @@ class Blacklist(BaseRewardModel):
 
     def __init__(self, 
         boundary:float = 6, 
-        n_min:int = 5, 
+        n_min:int = 5,
         n_max:int = 14, 
         word_limit:int = 2000, 
         A:float = 1.3, 
@@ -196,10 +196,12 @@ class Blacklist(BaseRewardModel):
         significance_scores = {}
         for ngram, count in self.counter.items():
             if count[0] + count[1] > max(self.support * self.num_completion, self.w_current + 1):
-            # calculate significance score for ngram
-                significance_scores[self.tokenizer.decode(ngram)] = self.A ** (len(ngram) - 1) * ((count[0] + count[1]) / self.num_completion) * 100
+                decoded_ngram = self.tokenizer.decode(ngram)
+                if len(decoded_ngram.split()) >= self.n_min:
+                    # calculate significance score for ngram
+                    significance_scores[decoded_ngram] = self.A ** (len(decoded_ngram) - 1) * ((count[0] + count[1]) / self.num_completion) * 100
 
-        self._last_update = self.num_ngram
+        self._last_update = self.num_completion
 
         return significance_scores
 
@@ -210,7 +212,7 @@ class Blacklist(BaseRewardModel):
             dict: Dictionary of n-gram tuples and their significance scores
         """
 
-        if self._last_update != self.num_ngram:
+        if self.num_completion - self._last_update > self.window:
             self.significance_scores = self.calculate_significance()
 
         return self.significance_scores
@@ -249,6 +251,7 @@ class Blacklist(BaseRewardModel):
         self.num_completion = math.ceil(self.num_completion/2) 
         self.w_current = math.ceil(self.num_completion / self.window) 
         self.counter = { tokens: [ math.ceil(count[0]/2), math.ceil(count[1]/2)] for tokens, count in self.counter.items()}
+        self._last_update = 0
 
     def reward(self, prompt: str, completion: str, name: str) -> float:
         """Reward function for blacklist reward model. Returns 1 if completion contains an n-gram with significance above the boundary, 0 otherwise.
