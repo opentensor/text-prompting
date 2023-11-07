@@ -122,19 +122,17 @@ async def run_step(
         self.device
     )
     for weight_i, reward_fn_i in zip(self.reward_weights, self.reward_functions):
-        reward_i, reward_i_normalized = reward_fn_i.apply(prompt, responses, name)
+        reward_i_normalized, reward_event = reward_fn_i.apply(prompt, responses, name)
         rewards += weight_i * reward_i_normalized.to(self.device)
         if not self.config.neuron.disable_log_rewards:
-            event[reward_fn_i.name] = reward_i.tolist()
-            event[reward_fn_i.name + "_normalized"] = reward_i_normalized.tolist()
+            event = {**event, **reward_event}
         bt.logging.trace(str(reward_fn_i.name), reward_i_normalized.tolist())
 
     for masking_fn_i in self.masking_functions:
-        mask_i, mask_i_normalized = masking_fn_i.apply(base_prompt, responses, name)
+        mask_i_normalized, reward_event = masking_fn_i.apply(base_prompt, responses, name)
         rewards *= mask_i_normalized.to(self.device)  # includes diversity
         if not self.config.neuron.disable_log_rewards:
-            event[masking_fn_i.name] = mask_i.tolist()
-            event[masking_fn_i.name + "_normalized"] = mask_i_normalized.tolist()
+            event = {**event, **reward_event}
         bt.logging.trace(str(masking_fn_i.name), mask_i_normalized.tolist())
 
     # Train the gating model based on the predicted scores and the actual rewards.
