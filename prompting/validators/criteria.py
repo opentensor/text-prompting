@@ -18,7 +18,7 @@
 import re
 import torch
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from typing import List
 from enum import Enum
@@ -109,3 +109,81 @@ class MatchLengthCriteria(TaskCriterion):
 
     def compose_text(self) -> str:
         return self.text.format(target_length=self.target_length, unit=self.unit.value)
+
+
+# Enum for Content Match Type
+class ContentMatchTypeEnum(Enum):
+    STARTS_WITH = "starts with"
+    ENDS_WITH = "ends with"
+    INCLUDES = "includes"
+
+
+# The MatchContentCriteria class
+@dataclass
+class MatchContentCriteria(TaskCriterion):
+    default_text: str = "Your response should {match_type} the following words: {words}."
+    text: str = default_text
+    penalty: float = 0.1
+    n_words: int = 3
+    words_array: List[str] = field(default_factory=list)
+    contentMatchType: ContentMatchTypeEnum = ContentMatchTypeEnum.STARTS_WITH
+    sampled_words: List[str] = field(init=False)
+    negate_match: bool = False
+
+    def __post_init__(self):
+        # Randomly sample words from the array based on n_words
+        self.sampled_words = np.random.choice(self.words_array, self.n_words, replace=False)
+
+    def _get_regex_pattern(self):
+        # Escape all special characters in the sampled words
+        escaped_words = map(re.escape, self.sampled_words)
+
+        if self.contentMatchType == ContentMatchTypeEnum.STARTS_WITH:
+            return rf"^\s*({'|'.join(escaped_words)})\b"
+        elif self.contentMatchType == ContentMatchTypeEnum.ENDS_WITH:            
+            return rf"({'|'.join(escaped_words)})\s*$"
+        else:  # ContentMatchTypeEnum.INCLUDES
+            return rf"({'|'.join(escaped_words)})"
+
+    def evaluate(self, completions: List[str]) -> torch.FloatTensor:
+        penalties = torch.zeros(len(completions), dtype=torch.float32)
+        # Define regex pattern based on contentMatchType
+        pattern = self._get_regex_pattern()
+
+        for idx, completion in enumerate(completions):
+            # Check if the completion matches the pattern
+            match = re.search(pattern, completion, re.IGNORECASE)
+                        
+            completion_with_undesired_match = self.negate_match and match
+            completion_without_desired_match = not self.negate_match and not match
+
+            if completion_with_undesired_match or completion_without_desired_match:
+                penalties[idx] = self.penalty            
+
+        return penalties
+
+    def compose_text(self) -> str:
+        # Check if the text property is different than the default. If so, use that text.
+        if self.text != MatchContentCriteria.default_text:
+            return self.text
+
+        # Adds "should" or "should not" instruction based on the negate_match property
+        should_match_text = "should" if not self.negate_match else "should not"
+
+        # Get the list of selected sampled words
+        words_list = ', '.join(self.sampled_words)
+
+         # Get the descriptive text of the match type
+        match_type_text = self.contentMatchType.value 
+
+        # Adjust the text based on the number of words
+        if self.n_words > 1:
+            text = f"Your response {should_match_text} {match_type_text} one of the following words: {words_list}."
+        else:
+            text = f"Your response {should_match_text} {match_type_text} the following word: {words_list}."
+        return text
+
+
+
+
+
