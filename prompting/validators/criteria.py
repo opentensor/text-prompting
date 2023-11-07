@@ -111,17 +111,17 @@ class MatchLengthCriteria(TaskCriterion):
         return self.text.format(target_length=self.target_length, unit=self.unit.value)
 
 
-# Enum for Content Match Type
 class ContentMatchTypeEnum(Enum):
     STARTS_WITH = "starts with"
     ENDS_WITH = "ends with"
     INCLUDES = "includes"
 
 
-# The MatchContentCriteria class
 @dataclass
 class MatchContentCriteria(TaskCriterion):
-    default_text: str = "Your response should {match_type} the following words: {words}."
+    default_text: str = (
+        "Your response should {match_type} the following words: {words}."
+    )
     text: str = default_text
     penalty: float = 0.1
     n_words: int = 3
@@ -132,7 +132,9 @@ class MatchContentCriteria(TaskCriterion):
 
     def __post_init__(self):
         # Randomly sample words from the array based on n_words
-        self.sampled_words = np.random.choice(self.words_array, self.n_words, replace=False)
+        self.sampled_words = np.random.choice(
+            self.words_array, self.n_words, replace=False
+        )
 
     def _get_regex_pattern(self):
         # Escape all special characters in the sampled words
@@ -140,7 +142,7 @@ class MatchContentCriteria(TaskCriterion):
 
         if self.contentMatchType == ContentMatchTypeEnum.STARTS_WITH:
             return rf"^\s*({'|'.join(escaped_words)})\b"
-        elif self.contentMatchType == ContentMatchTypeEnum.ENDS_WITH:            
+        elif self.contentMatchType == ContentMatchTypeEnum.ENDS_WITH:
             return rf"({'|'.join(escaped_words)})\s*$"
         else:  # ContentMatchTypeEnum.INCLUDES
             return rf"({'|'.join(escaped_words)})"
@@ -153,12 +155,12 @@ class MatchContentCriteria(TaskCriterion):
         for idx, completion in enumerate(completions):
             # Check if the completion matches the pattern
             match = re.search(pattern, completion, re.IGNORECASE)
-                        
+
             completion_with_undesired_match = self.negate_match and match
             completion_without_desired_match = not self.negate_match and not match
 
             if completion_with_undesired_match or completion_without_desired_match:
-                penalties[idx] = self.penalty            
+                penalties[idx] = self.penalty
 
         return penalties
 
@@ -171,10 +173,10 @@ class MatchContentCriteria(TaskCriterion):
         should_match_text = "should" if not self.negate_match else "should not"
 
         # Get the list of selected sampled words
-        words_list = ', '.join(self.sampled_words)
+        words_list = ", ".join(self.sampled_words)
 
-         # Get the descriptive text of the match type
-        match_type_text = self.contentMatchType.value 
+        # Get the descriptive text of the match type
+        match_type_text = self.contentMatchType.value
 
         # Adjust the text based on the number of words
         if self.n_words > 1:
@@ -184,6 +186,26 @@ class MatchContentCriteria(TaskCriterion):
         return text
 
 
+@dataclass
+class SimpleResponseLayoutCriteria(TaskCriterion):
+    penalty: float = 0.1
+    text: str = "Your response should not contain any bullet points or numbered lists."
 
+    def evaluate(self, completions: List[str]) -> torch.FloatTensor:
+        penalties = torch.zeros(len(completions), dtype=torch.float32)
 
+        # Regex patterns to match bullet points (unordered lists) and numbered lists
+        bullet_point_pattern = re.compile(r"(\*|\-|\+|\•|\‣|\◦)\s")
+        numbered_list_pattern = re.compile(r"\d+\.\s")
 
+        for idx, completion in enumerate(completions):
+            # Check if the completion contains a bullet point or numbered list
+            if bullet_point_pattern.search(completion) or numbered_list_pattern.search(
+                completion
+            ):
+                penalties[idx] = self.penalty
+
+        return penalties
+
+    def compose_text(self) -> str:
+        return self.text

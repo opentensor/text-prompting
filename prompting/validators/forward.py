@@ -112,7 +112,7 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
                 # otherwise take the last sentence
                 completion = completion.split(".")[-1].split(".")[-1]
                 response.completion = " ".join(completion.split(" ")[-max_words:])
-                        
+
     # Compute the rewards for the responses given the prompt.
     rewards: torch.FloatTensor = torch.zeros(len(responses), dtype=torch.float32).to(
         self.device

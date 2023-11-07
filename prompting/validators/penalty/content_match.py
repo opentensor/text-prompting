@@ -45,12 +45,11 @@ class ContentMatchPenaltyModel(BasePenaltyModel):
             r"solution\s+\(in\s+\w+\)",  # solution (in \w+)
             r"great\s+job!\s+here(?:'s| is)",  # great job! here...
             r"keep\s+it\s+clear\s+and\s+concise.\s+Use\s+complete\s+sentences.",  # keep it clear and concise. Use complete sentences.
-            r"task\s*:"# task:
-            r"i\s+can\s+help\s+you\s+with", # I can help you with
-            r"what\s+did\s+I\s+learn\s+today\s*\?", # what did I learn today?
-            r"paraphrase\s*:", # paraphrase:
-            r"your\s+task\s+now\s+is\s+to\s+write\s+a\s+tweet\s+about\s+the\s+previous\s+text", # your task now is to write a tweet about the previous text
-            r"what\s+is\s+the\s+main\s+point\s+of\s+the\s+passage", # what is the main point of the passage
+            r"task\s*:" r"i\s+can\s+help\s+you\s+with",  # task:  # I can help you with
+            r"what\s+did\s+I\s+learn\s+today\s*\?",  # what did I learn today?
+            r"paraphrase\s*:",  # paraphrase:
+            r"your\s+task\s+now\s+is\s+to\s+write\s+a\s+tweet\s+about\s+the\s+previous\s+text",  # your task now is to write a tweet about the previous text
+            r"what\s+is\s+the\s+main\s+point\s+of\s+the\s+passage",  # what is the main point of the passage
         ]
 
         penalties = []
