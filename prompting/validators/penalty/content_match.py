@@ -41,10 +41,16 @@ class ContentMatchPenaltyModel(BasePenaltyModel):
             r"the\s+question\s+was",  # the question was
             r"use\s+proper\s+grammar",  # use proper grammar
             r"what\s+is\s+the\s+correct\s+order\s+of\s+the\s+key\s+points",  # what is the correct order of the key points
-            r"sure!\s+here.+",  # sure! here...
+            r"sure!\s+her.+",  # sure! here...
             r"solution\s+\(in\s+\w+\)",  # solution (in \w+)
             r"great\s+job!\s+here(?:'s| is)",  # great job! here...
             r"keep\s+it\s+clear\s+and\s+concise.\s+Use\s+complete\s+sentences.",  # keep it clear and concise. Use complete sentences.
+            r"task\s*:"# task:
+            r"i\s+can\s+help\s+you\s+with", # I can help you with
+            r"what\s+did\s+I\s+learn\s+today\s*\?", # what did I learn today?
+            r"paraphrase\s*:", # paraphrase:
+            r"your\s+task\s+now\s+is\s+to\s+write\s+a\s+tweet\s+about\s+the\s+previous\s+text", # your task now is to write a tweet about the previous text
+            r"what\s+is\s+the\s+main\s+point\s+of\s+the\s+passage", # what is the main point of the passage
         ]
 
         penalties = []
@@ -53,7 +59,7 @@ class ContentMatchPenaltyModel(BasePenaltyModel):
             # Trim and consider only the first 200 characters
             completion_segment = completion.strip()[:200].lower()
             for pattern in system_messages_penalizing_sentences:
-                if re.search(pattern, completion_segment):
+                if re.search(pattern, completion_segment, re.IGNORECASE):
                     accumulated_penalty += 0.1
             penalties.append(accumulated_penalty)
 
