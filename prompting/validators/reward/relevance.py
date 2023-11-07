@@ -23,7 +23,7 @@ from .reward import BaseRewardModel
 from transformers import AutoTokenizer, AutoModel
 from torchmetrics.functional import pairwise_cosine_similarity
 import torch.nn.functional as F
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 
 
 def mean_pooling(model_output, attention_mask):
@@ -68,24 +68,32 @@ class RelevanceRewardModel(BaseRewardModel):
         ]
         self.bounds = [-0.0246, 0.3]
 
+    def parse_reward_results(self, reward_results):
+        field_names = [field.name for field in fields(RelevanceRewardModel.RewardResult)]
+        
+        reward_results = [asdict(reward_result).values() for reward_result in reward_results]
+
+        reward_event = dict(zip(field_names, list(zip(*reward_results))))
+
+        reward = reward_event['reward']
+        
+        del reward_event['reward']
+        
+        return reward, reward_event
+
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
     ) -> torch.FloatTensor:
+        # Get all the reward results.
+        reward_results = [self.reward(prompt, completion, name) for completion in completions]
 
-        # All reward result for each completions.
-        reward_results = [asdict(self.reward(prompt, completion, name)).values() for completion in completions]
+        # Parse the result and generate an event to be logged.
+        reward, reward_event = self.parse_reward_results(reward_results)
 
-        # Transpose the reward results.
-        rewards, bert_relevancy_scores, mpnet_relevancy_scores = list(zip(*reward_results))
-                
-        rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
+        reward = torch.tensor(reward, dtype=torch.float32)
 
-        reward_event = {
-            'bert_relevancy_score': bert_relevancy_scores,
-            'mpnet_relevancy_scores': mpnet_relevancy_scores
-        }
+        return reward, reward_event
 
-        return rewards, reward_event
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards
