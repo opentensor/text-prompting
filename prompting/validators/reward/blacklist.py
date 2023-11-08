@@ -54,7 +54,7 @@ class Blacklist(BaseRewardModel):
             n_min (int, optional): Smallest ngram size. Defaults to 5.
             n_max (int, optional): Largest ngram size. Defaults to 14.
             word_limit (int, optional): Maximum word length, to prevent extremely long completions from overworking the queue. Defaults to 2000.
-            A (float, optional): Exponent used in significance scoring, smaller A gives more weight to smaller ngrams. Values of 1.1-2 are recommended. Defaults to 1.1.
+            A (float, optional): Exponent used in significance scoring, smaller A gives more weight to smaller ngrams. Values of 1.1-2 are recommended. Defaults to 1.3.
             preprocess (str, optional): Regex preprocessing string to make text more uniform. Defaults to '[^(\w|\s)]'.
             partial_ratio_boundry (int, optional): Boundry for fuzzy match.
             half_life (int, optional): Half life of the counter. ie. When the number of completions processed > half life, then put all the counters in half.
