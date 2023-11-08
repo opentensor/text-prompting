@@ -82,7 +82,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
             # Completion doesn't fit into model sequence, so return lowest reward.
             if self.tokenizer.model_max_length <= len(prompt_part):
                 reward_event.reward = -11.0
-                return (
+                return reward_event
                     reward_event  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
                 )
 
