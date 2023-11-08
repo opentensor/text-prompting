@@ -15,22 +15,26 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-from . import config
-from . import forward
-from . import gating
-from . import misc
-from . import mock
-from . import prompts
-from . import reward
-from . import utils
-from . import weights
-from . import event
-from . import dataset
+import torch
+from typing import List
+from prompting.validators.tasks import Task
+from prompting.validators.penalty.penalty import BasePenaltyModel, PenaltyModelType
 
-__version__ = "2.1.1"
-version_split = __version__.split(".")
-__spec_version__ = (
-    (1000 * int(version_split[0]))
-    + (10 * int(version_split[1]))
-    + (1 * int(version_split[2]))
-)
+
+class TaskValidationPenaltyModel(BasePenaltyModel):
+    @property
+    def name(self) -> str:
+        return PenaltyModelType.task_validation_penalty.value
+
+    def calculate_penalties(
+        self, task: Task, completions: List[str]
+    ) -> torch.FloatTensor:
+        accumulated_penalties: torch.FloatTensor = torch.zeros(
+            len(completions), dtype=torch.float32
+        )
+
+        # Accumulate penalties for each criterion
+        for criterion in task.criteria:
+            accumulated_penalties.add_(criterion.evaluate(completions))
+
+        return accumulated_penalties

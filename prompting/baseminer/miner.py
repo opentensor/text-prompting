@@ -68,9 +68,6 @@ class Miner(ABC):
 
         # Activating Bittensor's logging with the set configurations.
         bt.logging(config=self.config, logging_dir=self.config.full_path)
-        bt.logging.info(
-            f"Running miner for subnet: {self.config.netuid} on network: {self.config.subtensor.chain_endpoint} with config:"
-        )
 
         if not self.config.miner.blacklist.force_validator_permit:
             bt.logging.warning(
@@ -89,7 +86,10 @@ class Miner(ABC):
 
         # subtensor manages the blockchain connection, facilitating interaction with the Bittensor blockchain.
         self.subtensor = subtensor or bt.subtensor(config=self.config)
-        bt.logging.info(f"Subtensor: {subtensor}")
+        bt.logging.info(f"Subtensor: {self.subtensor}")
+        bt.logging.info(
+            f"Running miner for subnet: {self.config.netuid} on network: {self.subtensor.chain_endpoint} with config:"
+        )
 
         # metagraph provides the network's current state, holding state about other participants in a subnet.
         self.metagraph = self.subtensor.metagraph(self.config.netuid)
