@@ -62,7 +62,8 @@ class DirectPreferenceRewardModel(BaseRewardModel):
         with torch.no_grad():
             # Check if completion is
             if completion.strip() == "" or len(completion) <= 5:
-                reward_event.reward = (
+                # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+                reward_event.reward = -11.0
                     -11.0
                 )  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
                 return reward_event
