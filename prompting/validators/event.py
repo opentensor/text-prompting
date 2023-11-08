@@ -60,6 +60,12 @@ class EventSchema:
     diversity_reward_model: Optional[
         List[float]
     ]  # Output vector of the diversity reward model
+    diversity_reward_model_historic: Optional[
+        List[float]
+    ]  # Output vector of the diversity reward model
+    diversity_reward_model_batch: Optional[
+        List[float]
+    ]  # Output vector of the diversity reward model
     dpo_reward_model: Optional[List[float]]  # Output vector of the dpo reward model
     rlhf_reward_model: Optional[List[float]]  # Output vector of the rlhf reward model
     prompt_reward_model: Optional[
@@ -119,6 +125,8 @@ class EventSchema:
                 RewardModelType.reciprocate.value
             ),
             "diversity_reward_model": event_dict.get(RewardModelType.diversity.value),
+            "diversity_reward_model_historic": event_dict.get(RewardModelType.diversity.value + '_historic'),
+            "diversity_reward_model_batch": event_dict.get(RewardModelType.diversity.value + '_batch'),
             "dpo_reward_model": event_dict.get(RewardModelType.dpo.value),
             "rlhf_reward_model": event_dict.get(RewardModelType.rlhf.value),
             "prompt_reward_model": event_dict.get(RewardModelType.prompt.value),

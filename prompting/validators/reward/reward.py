@@ -155,7 +155,7 @@ class BaseRewardModel:
             filled_rewards_normalized[idx] = reward_normalized
 
         # Name each item of the reward event with the reward model name.
-        reward_events = {f"{self.name}_{k}": v for k, v in reward_event.items()}
+        reward_events = {f"{self.name}_{k}": v for k, v in reward_events.items()}
         reward_events[self.name] = filled_rewards.tolist()
         reward_events[self.name + "_normalized"] = filled_rewards_normalized.tolist()
 
