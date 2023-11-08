@@ -49,8 +49,8 @@ def mean_pooling(model_output, attention_mask):
 
 @dataclass
 class RelevanceRewardEvent(BaseRewardEvent):
-    bert_relevancy_score: float = None
-    mpnet_relevancy_score: float = None
+    bert_score: float = None
+    mpnet_score: float = None
 
 class RelevanceRewardModel(BaseRewardModel):
     @property
@@ -95,10 +95,10 @@ class RelevanceRewardModel(BaseRewardModel):
                 reward_event.reward = 0
 
             if model.name == 'relevance_bert':
-                reward_event.bert_relevancy_score = diff
+                reward_event.bert_score = diff
             
             elif model.name == 'relevance_mpnet':
-                reward_event.mpnet_relevancy_score = diff
+                reward_event.mpnet_score = diff
         
         # If none of the models returned 0, return 1
         return reward_event

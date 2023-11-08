@@ -47,6 +47,8 @@ class EventSchema:
         List[float]
     ]  # Output vector of the dahoas reward model
     blacklist_filter: Optional[List[float]]  # Output vector of the blacklist filter
+    blacklist_filter_matched_ngram: Optional[List[str]]  # Output vector of the blacklist filter
+    blacklist_filter_significance_score: Optional[List[float]]  # Output vector of the blacklist filter
     nsfw_filter: Optional[List[float]]  # Output vector of the nsfw filter
     reciprocate_reward_model: Optional[
         List[float]
@@ -68,6 +70,7 @@ class EventSchema:
         List[float]
     ]  # Output vector of the dahoas reward model
     nsfw_filter_normalized: Optional[List[float]]  # Output vector of the nsfw filter
+    nsfw_filter_score: Optional[List[float]]  # Output vector of the nsfw filter
     reciprocate_reward_model_normalized: Optional[
         List[float]
     ]  # Output vector of the reciprocate reward model
@@ -84,6 +87,12 @@ class EventSchema:
         List[float]
     ]  # Output vector of the prompt reward model
     relevance_filter_normalized: Optional[
+        List[float]
+    ]  # Output vector of the relevance scoring reward model
+    relevance_filter_bert_score: Optional[
+        List[float]
+    ]  # Output vector of the relevance scoring reward model
+    relevance_filter_mpnet_score: Optional[
         List[float]
     ]  # Output vector of the relevance scoring reward model
     task_validator_filter_normalized: Optional[List[float]]
@@ -136,6 +145,21 @@ class EventSchema:
             "prompt_reward_model_normalized": event_dict.get(
                 RewardModelType.prompt.value + "_normalized"
             ),
+            "blacklist_filter_matched_ngram": event_dict.get(
+                RewardModelType.blacklist.value + "_matched_ngram"
+            ),
+            "blacklist_filter_significance_score": event_dict.get(
+                RewardModelType.blacklist.value + "_significance_score"
+            ),
+            "relevance_filter_bert_score": event_dict.get(
+                RewardModelType.relevance.value + "_bert_score"
+            ),
+            "relevance_filter_mpnet_score": event_dict.get(
+                RewardModelType.relevance.value + "_mpnet_score"
+            ),
+            "nsfw_filter_score": event_dict.get(
+                RewardModelType.nsfw.value + "_score"
+            )
         }
 
         # Logs warning that expected data was not set properly

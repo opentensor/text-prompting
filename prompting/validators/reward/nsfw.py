@@ -25,7 +25,7 @@ from dataclasses import dataclass
 
 @dataclass
 class NSFWRewardEvent(BaseRewardEvent):
-    nsfw_score: float = None
+    score: float = None
 class NSFWRewardModel(BaseRewardModel):
     nsfw_filter_model_path = "facebook/roberta-hate-speech-dynabench-r4-target"
 
@@ -69,9 +69,9 @@ class NSFWRewardModel(BaseRewardModel):
                 return max_score
 
             # 0 when needs to be filtered out, 1 when it is safe
-            nsfw_score = sum_nsfw_scores(input_ids, chunk_size=512)
-            reward_event.nsfw_score = nsfw_score
-            reward_event.reward = 0.0 if nsfw_score > boundary else 1.0
+            score = sum_nsfw_scores(input_ids, chunk_size=512)
+            reward_event.score = score
+            reward_event.reward = 0.0 if score > boundary else 1.0
             return reward_event
 
     def get_rewards(
