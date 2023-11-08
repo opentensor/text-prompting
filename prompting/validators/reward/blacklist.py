@@ -170,7 +170,7 @@ class Blacklist(BaseRewardModel):
     def prune(self):
         """Prune the counter when the count is smaller then bucket index."""
         prune_ele = []
-        for ele, (frequence, max_error) in self.counter.items():
+        for ele, (frequency, max_error) in self.counter.items():
             if frequency + max_error <= self.w_current:
                 prune_ele.append(ele)
 
