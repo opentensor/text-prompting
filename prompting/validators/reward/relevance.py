@@ -17,7 +17,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import torch
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
 from .reward import BaseRewardModel
 from transformers import AutoTokenizer, AutoModel
@@ -83,7 +83,7 @@ class RelevanceRewardModel(BaseRewardModel):
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
+    ) -> Union[torch.FloatTensor, dict]:
         # Get all the reward results.
         reward_results = [self.reward(prompt, completion, name) for completion in completions]
 

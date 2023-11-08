@@ -18,7 +18,7 @@
 
 import torch
 import bittensor as bt
-from typing import List
+from typing import List, Union
 from abc import abstractmethod
 
 
@@ -37,7 +37,7 @@ class BaseRewardModel:
     @abstractmethod
     def get_rewards(
         self, prompt: str, completion: List[str], name: str
-    ) -> torch.FloatTensor:
+    ) -> Union[torch.FloatTensor, dict]:
         ...
 
     def __init__(self) -> None:

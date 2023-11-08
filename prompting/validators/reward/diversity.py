@@ -155,10 +155,10 @@ class DiversityRewardModel(BaseRewardModel):
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
+    ) -> Union[torch.FloatTensor, dict]:
         # Check if completions are empty, return 0 if so
         if len(completions) == 0:
-            return torch.tensor([]).to(self.device)
+            return torch.tensor([]).to(self.device), None
 
         # Get embeddings for all completions.
         embeddings = self.get_embeddings(completions)
@@ -173,9 +173,9 @@ class DiversityRewardModel(BaseRewardModel):
 
         # Return all
         if historic_rewards != None:
-            return batch_rewards * historic_rewards
+            return batch_rewards * historic_rewards, None
         else:
-            return batch_rewards
+            return batch_rewards, None
 
     def normalize_rewards(self, raw_rewards: torch.FloatTensor) -> torch.FloatTensor:
         # Applies binarization on the rewards.

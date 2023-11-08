@@ -18,7 +18,7 @@
 
 import torch
 import bittensor as bt
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
 from .reward import BaseRewardModel
 from transformers import (
@@ -128,7 +128,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
+    ) -> Union[torch.FloatTensor, dict]:
         rewards = torch.tensor(
             [
                 self.reward_single(prompt, completion, name)
@@ -137,4 +137,4 @@ class DirectPreferenceRewardModel(BaseRewardModel):
             dtype=torch.float32,
         ).to(self.device)
         bt.logging.trace(f"DirectPreferenceRewardModel | rewards: {rewards.tolist()}")
-        return rewards
+        return rewards, None

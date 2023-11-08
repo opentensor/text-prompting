@@ -17,7 +17,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import torch
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
 from .reward import BaseRewardModel
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -67,11 +67,11 @@ class NSFWRewardModel(BaseRewardModel):
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
+    ) -> Union[torch.FloatTensor, dict]:
         return torch.tensor(
             [self.reward(prompt, completion, name) for completion in completions],
             dtype=torch.float32,
-        ).to(self.device)
+        ).to(self.device), None
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards

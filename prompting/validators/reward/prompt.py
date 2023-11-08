@@ -19,7 +19,7 @@
 import time
 import torch
 import bittensor as bt
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
 from .reward import BaseRewardModel
 from prompting.validators.prompts import AugmentPrompt, FollowupPrompt, AnswerPrompt
@@ -100,7 +100,7 @@ class PromptRewardModel(BaseRewardModel):
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
+    ) -> Union[torch.FloatTensor, dict]:
         bt.logging.debug(
             f"PromptRewardModel | Calculating {len(completions)} rewards (typically < 1 sec/reward)."
         )
@@ -110,4 +110,4 @@ class PromptRewardModel(BaseRewardModel):
         return torch.tensor(
             [self.reward(prompt, completion, name) for completion in completions],
             dtype=torch.float32,
-        ).to(self.device)
+        ).to(self.device), None
