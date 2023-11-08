@@ -29,10 +29,12 @@ from dataclasses import dataclass
 
 # TODO: Use CLI arguments to set blacklist values: the most important being the boundary value and max_size
 
+
 @dataclass
 class BlacklistRewardEvent(BaseRewardEvent):
     matched_ngram: str = None
     significance_score: float = None
+
 
 class Blacklist(BaseRewardModel):
     @property
