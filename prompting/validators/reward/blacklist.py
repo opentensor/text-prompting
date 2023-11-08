@@ -145,7 +145,7 @@ class Blacklist(BaseRewardModel):
             if ngram in self.counter:
                 self.counter[ngram][0] += 1
             else:
-                # Store the tuple (frequence, max_error)
+                # Store the tuple (frequency, max_error)
                 self.counter[ngram] = [1, self.w_current - 1]
 
             # Start the prune procedure periodically.
