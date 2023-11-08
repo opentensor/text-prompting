@@ -219,7 +219,8 @@ def create_qg_task(base_text: str, index: int) -> QuestionGenerationTask:
 def create_qa_task(base_text: str, index: int) -> QuestionAnswerTask:
     answer_should_not_include_criteria = MatchContentCriteria(
         words_array=["?"],
-        n_words=0.2,
+        n_words=1,
+        penalty=0.2,
         contentMatchType=ContentMatchTypeEnum.INCLUDES,
         negate_match=True,
         text="Your response should not include any question marks",
