@@ -99,7 +99,9 @@ async def run_step(
     )
 
     # Update blacklist with completions so that n-gram filtering can be applied
-    self.blacklist.add([response.completion for response in responses if response.completion])
+    self.blacklist.add(
+        [response.completion for response in responses if response.completion]
+    )
 
     # Restrict the format of acceptable followup completions.
     for response in responses:
@@ -129,7 +131,9 @@ async def run_step(
         bt.logging.trace(str(reward_fn_i.name), reward_i_normalized.tolist())
 
     for masking_fn_i in self.masking_functions:
-        mask_i_normalized, reward_event = masking_fn_i.apply(base_prompt, responses, name)
+        mask_i_normalized, reward_event = masking_fn_i.apply(
+            base_prompt, responses, name
+        )
         rewards *= mask_i_normalized.to(self.device)  # includes diversity
         if not self.config.neuron.disable_log_rewards:
             event = {**event, **reward_event}

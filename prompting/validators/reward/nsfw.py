@@ -23,9 +23,12 @@ from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from dataclasses import dataclass
 
+
 @dataclass
 class NSFWRewardEvent(BaseRewardEvent):
     score: float = None
+
+
 class NSFWRewardModel(BaseRewardModel):
     nsfw_filter_model_path = "facebook/roberta-hate-speech-dynabench-r4-target"
 
@@ -44,7 +47,6 @@ class NSFWRewardModel(BaseRewardModel):
         ).to(self.device)
 
     def reward(self, prompt: str, completion: str, name: str) -> NSFWRewardEvent:
-
         reward_event = NSFWRewardEvent()
 
         boundary = -0.5
@@ -74,16 +76,18 @@ class NSFWRewardModel(BaseRewardModel):
             reward_event.reward = 0.0 if score > boundary else 1.0
             return reward_event
 
-    def get_rewards(
-        self, prompt: str, completions: List[str], name: str
-    ) -> dict:
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
         # Get all the reward results.
-        reward_events = [self.reward(prompt, completion, name) for completion in completions]
+        reward_events = [
+            self.reward(prompt, completion, name) for completion in completions
+        ]
 
         # Parse the result and generate an event to be logged.
         parsed_reward_events = BaseRewardEvent.parse_reward_events(reward_events)
 
-        parsed_reward_events['reward'] = torch.tensor(parsed_reward_events['reward'], dtype=torch.float32).to(self.device)
+        parsed_reward_events["reward"] = torch.tensor(
+            parsed_reward_events["reward"], dtype=torch.float32
+        ).to(self.device)
 
         return parsed_reward_events
 

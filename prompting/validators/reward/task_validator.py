@@ -30,9 +30,8 @@ class TaskValidator(BaseRewardModel):
         super().__init__()
 
     def reward(self, prompt: str, completion: str, name: str) -> BaseRewardEvent:
-        
-        reward_event = BaseRewardEvent() 
-        
+        reward_event = BaseRewardEvent()
+
         summary_keywords = ["Summary:", "Paraphrase:", "Paraphrasing:", "Paraphrased:"]
         question_keywords = ["Question:", "Query:", "Q:"]
         answer_keywords = ["Answer:", "Response:", "A:", "Completion:"]
@@ -73,16 +72,18 @@ class TaskValidator(BaseRewardModel):
         reward_event.reward = 1
         return reward_event
 
-    def get_rewards(
-        self, prompt: str, completions: List[str], name: str
-    ) -> dict:
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
         # Get all the reward results.
-        reward_events = [self.reward(prompt, completion, name) for completion in completions]
+        reward_events = [
+            self.reward(prompt, completion, name) for completion in completions
+        ]
 
         # Parse the result and generate an event to be logged.
         parsed_reward_events = BaseRewardEvent.parse_reward_events(reward_events)
 
-        parsed_reward_events['reward'] = torch.tensor(parsed_reward_events['reward'], dtype=torch.float32)
+        parsed_reward_events["reward"] = torch.tensor(
+            parsed_reward_events["reward"], dtype=torch.float32
+        )
 
         return parsed_reward_events
 

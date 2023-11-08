@@ -62,7 +62,9 @@ class DirectPreferenceRewardModel(BaseRewardModel):
         with torch.no_grad():
             # Check if completion is
             if completion.strip() == "" or len(completion) <= 5:
-                reward_event.reward = -11.0  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+                reward_event.reward = (
+                    -11.0
+                )  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
                 return reward_event
 
             # Tokenize the combined prompt + completion.
@@ -79,7 +81,9 @@ class DirectPreferenceRewardModel(BaseRewardModel):
             # Completion doesn't fit into model sequence, so return lowest reward.
             if self.tokenizer.model_max_length <= len(prompt_part):
                 reward_event.reward = -11.0
-                return reward_event  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+                return (
+                    reward_event  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+                )
 
             # Truncate combined to fit into model max sequence length.
             if self.tokenizer.model_max_length < len(combined):
@@ -128,22 +132,25 @@ class DirectPreferenceRewardModel(BaseRewardModel):
 
             # NaNs can possibly arise through log(0)=-inf, replace with suitably small logits.
             if torch.isnan(reward) or torch.isinf(reward):
-                reward_event.reward = -11.0  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
-            
+                reward_event.reward = (
+                    -11.0
+                )  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+
             reward_event.reward = reward.item()
             return reward_event
 
-    def get_rewards(
-        self, prompt: str, completions: List[str], name: str
-    ) -> dict:
-
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
         # Get all the reward results.
-        reward_events = [self.reward_single(prompt, completion, name) for completion in completions]
+        reward_events = [
+            self.reward_single(prompt, completion, name) for completion in completions
+        ]
 
         # Parse the result and generate an event to be logged.
         parsed_reward_events = BaseRewardEvent.parse_reward_events(reward_events)
 
-        parsed_reward_events['reward'] = torch.tensor(parsed_reward_events['reward'], dtype=torch.float32).to(self.device)
+        parsed_reward_events["reward"] = torch.tensor(
+            parsed_reward_events["reward"], dtype=torch.float32
+        ).to(self.device)
 
         bt.logging.trace(f"DirectPreferenceRewardModel | rewards: {rewards.tolist()}")
 

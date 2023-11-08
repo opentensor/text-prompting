@@ -47,8 +47,12 @@ class EventSchema:
         List[float]
     ]  # Output vector of the dahoas reward model
     blacklist_filter: Optional[List[float]]  # Output vector of the blacklist filter
-    blacklist_filter_matched_ngram: Optional[List[str]]  # Output vector of the blacklist filter
-    blacklist_filter_significance_score: Optional[List[float]]  # Output vector of the blacklist filter
+    blacklist_filter_matched_ngram: Optional[
+        List[str]
+    ]  # Output vector of the blacklist filter
+    blacklist_filter_significance_score: Optional[
+        List[float]
+    ]  # Output vector of the blacklist filter
     nsfw_filter: Optional[List[float]]  # Output vector of the nsfw filter
     reciprocate_reward_model: Optional[
         List[float]
@@ -157,9 +161,7 @@ class EventSchema:
             "relevance_filter_mpnet_score": event_dict.get(
                 RewardModelType.relevance.value + "_mpnet_score"
             ),
-            "nsfw_filter_score": event_dict.get(
-                RewardModelType.nsfw.value + "_score"
-            )
+            "nsfw_filter_score": event_dict.get(RewardModelType.nsfw.value + "_score"),
         }
 
         # Logs warning that expected data was not set properly

@@ -47,10 +47,12 @@ def mean_pooling(model_output, attention_mask):
         input_mask_expanded.sum(1), min=1e-9
     )
 
+
 @dataclass
 class RelevanceRewardEvent(BaseRewardEvent):
     bert_score: float = None
     mpnet_score: float = None
+
 
 class RelevanceRewardModel(BaseRewardModel):
     @property
@@ -66,16 +68,18 @@ class RelevanceRewardModel(BaseRewardModel):
         ]
         self.bounds = [-0.0246, 0.3]
 
-    def get_rewards(
-        self, prompt: str, completions: List[str], name: str
-    ) -> dict:
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
         # Get all the reward results.
-        reward_events = [self.reward(prompt, completion, name) for completion in completions]
+        reward_events = [
+            self.reward(prompt, completion, name) for completion in completions
+        ]
 
         # Parse the result and generate an event to be logged.
         parsed_reward_events = RelevanceRewardEvent.parse_reward_events(reward_events)
 
-        parsed_reward_events['reward'] = torch.tensor(parsed_reward_events['reward'], dtype=torch.float32).to(self.device)
+        parsed_reward_events["reward"] = torch.tensor(
+            parsed_reward_events["reward"], dtype=torch.float32
+        ).to(self.device)
 
         return parsed_reward_events
 
@@ -83,7 +87,6 @@ class RelevanceRewardModel(BaseRewardModel):
         return rewards
 
     def reward(self, prompt: str, completion: str, name: str) -> RelevanceRewardEvent:
-
         reward_event = RelevanceRewardEvent()
 
         for i, model in enumerate(self.models):
@@ -94,12 +97,12 @@ class RelevanceRewardModel(BaseRewardModel):
             if diff < self.bounds[i]:
                 reward_event.reward = 0
 
-            if model.name == 'relevance_bert':
+            if model.name == "relevance_bert":
                 reward_event.bert_score = diff
-            
-            elif model.name == 'relevance_mpnet':
+
+            elif model.name == "relevance_mpnet":
                 reward_event.mpnet_score = diff
-        
+
         # If none of the models returned 0, return 1
         return reward_event
 
@@ -169,7 +172,7 @@ class MpnetRelevenceModel(BaseRewardModel):
     @property
     def name(self) -> str:
         return RewardModelType.relevance_mpnet.value
-    
+
     def __init__(self, device: str):
         super().__init__()
         self.device = device

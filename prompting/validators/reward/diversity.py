@@ -153,10 +153,7 @@ class DiversityRewardModel(BaseRewardModel):
 
         return regularise(rewards)
 
-    def get_rewards(
-        self, prompt: str, completions: List[str], name: str
-    ) -> dict:
-
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
         # Check if completions are empty, return 0 if so
         if len(completions) == 0:
             return torch.tensor([]).to(self.device), None
@@ -174,9 +171,9 @@ class DiversityRewardModel(BaseRewardModel):
 
         # Return all
         if historic_rewards != None:
-            return {'reward': batch_rewards * historic_rewards}
+            return {"reward": batch_rewards * historic_rewards}
         else:
-            return {'reward': batch_rewards}
+            return {"reward": batch_rewards}
 
     def normalize_rewards(self, raw_rewards: torch.FloatTensor) -> torch.FloatTensor:
         # Applies binarization on the rewards.
