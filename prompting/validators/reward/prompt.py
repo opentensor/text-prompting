@@ -102,7 +102,9 @@ class PromptRewardModel(BaseRewardModel):
             reward_event.reward = score
             return reward_event
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[BaseRewardEvent]:
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> List[BaseRewardEvent]:
         bt.logging.debug(
             f"PromptRewardModel | Calculating {len(completions)} rewards (typically < 1 sec/reward)."
         )

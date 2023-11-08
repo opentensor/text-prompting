@@ -305,7 +305,9 @@ class Blacklist(BaseRewardModel):
         reward_event.reward = 1
         return reward_event
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[BlacklistRewardEvent]:
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> List[BlacklistRewardEvent]:
         # Get all the reward results.
         reward_events = [
             self.reward(prompt, completion, name) for completion in completions

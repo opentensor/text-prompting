@@ -76,7 +76,9 @@ class NSFWRewardModel(BaseRewardModel):
             reward_event.reward = 0.0 if score > boundary else 1.0
             return reward_event
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[NSFWRewardEvent]:
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> List[NSFWRewardEvent]:
         # Get all the reward results.
         reward_events = [
             self.reward(prompt, completion, name) for completion in completions

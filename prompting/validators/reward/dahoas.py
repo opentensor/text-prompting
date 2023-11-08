@@ -105,7 +105,9 @@ class DahoasRewardModel(BaseRewardModel):
             reward_event.reward = float((combined_reward - independent_reward).item())
             return reward_event
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[BaseRewardEvent]:
+    def get_rewards(
+        self, prompt: str, completions: List[str], name: str
+    ) -> List[BaseRewardEvent]:
         # Get all the reward results.
         reward_events = [
             self.reward(prompt, completion, name) for completion in completions

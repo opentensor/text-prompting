@@ -125,8 +125,12 @@ class EventSchema:
                 RewardModelType.reciprocate.value
             ),
             "diversity_reward_model": event_dict.get(RewardModelType.diversity.value),
-            "diversity_reward_model_historic": event_dict.get(RewardModelType.diversity.value + '_historic'),
-            "diversity_reward_model_batch": event_dict.get(RewardModelType.diversity.value + '_batch'),
+            "diversity_reward_model_historic": event_dict.get(
+                RewardModelType.diversity.value + "_historic"
+            ),
+            "diversity_reward_model_batch": event_dict.get(
+                RewardModelType.diversity.value + "_batch"
+            ),
             "dpo_reward_model": event_dict.get(RewardModelType.dpo.value),
             "rlhf_reward_model": event_dict.get(RewardModelType.rlhf.value),
             "prompt_reward_model": event_dict.get(RewardModelType.prompt.value),

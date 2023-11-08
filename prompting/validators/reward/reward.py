@@ -133,10 +133,12 @@ class BaseRewardModel:
         ]
 
         # Reward each completion.
-        reward_events = BaseRewardEvent.parse_reward_events(self.get_rewards(prompt, successful_completions, name))
+        reward_events = BaseRewardEvent.parse_reward_events(
+            self.get_rewards(prompt, successful_completions, name)
+        )
         successful_rewards = torch.tensor(
             reward_events.pop("reward"), dtype=torch.float32
-        ) 
+        )
 
         # Softmax rewards across samples.
         successful_rewards_normalized = self.normalize_rewards(successful_rewards)
