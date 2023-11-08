@@ -25,25 +25,26 @@ from .config import RewardModelType
 from .reward import BaseRewardModel
 from transformers import BertTokenizer
 
+
 # TODO: Use CLI arguments to set blacklist values: the most important being the boundary value and max_size
 class Blacklist(BaseRewardModel):
-
     @property
     def name(self) -> str:
         return RewardModelType.blacklist.value
 
-    def __init__(self, 
-        boundary:float = 6, 
-        n_min:int = 5,
-        n_max:int = 14, 
-        word_limit:int = 2000, 
-        A:float = 1.3, 
-        preprocess:str = '[^(\\w|\\s)]',
+    def __init__(
+        self,
+        boundary: float = 6,
+        n_min: int = 5,
+        n_max: int = 14,
+        word_limit: int = 2000,
+        A: float = 1.3,
+        preprocess: str = "[^(\\w|\\s)]",
         partial_ratio_boundary: float = 95,
         half_life: int = 20000,
         support: float = 0.01,
         error: float = 0.001,
-        memory_lim: int = 1_000_000
+        memory_lim: int = 1_000_000,
     ):
         """N-gram blacklist reward model which penalizes overused phrases in the network
 
@@ -55,7 +56,7 @@ class Blacklist(BaseRewardModel):
             word_limit (int, optional): Maximum word length, to prevent extremely long completions from overworking the queue. Defaults to 2000.
             A (float, optional): Exponent used in significance scoring, smaller A gives more weight to smaller ngrams. Values of 1.1-2 are recommended. Defaults to 1.1.
             preprocess (str, optional): Regex preprocessing string to make text more uniform. Defaults to '[^(\w|\s)]'.
-            partial_ratio_boundry (int, optional): Boundry for fuzzy match. 
+            partial_ratio_boundry (int, optional): Boundry for fuzzy match.
             half_life (int, optional): Half life of the counter. ie. When the number of completions processed > half life, then put all the counters in half.
             support (float, optional): The percentage of times that a phrase need to appear to get the phrase kept in counter. (support should be >> counter)
             error (float, optional): Error parameter for lossy sampling, should be as small as possible, further decreasing it further will increase memory usage. (support should be >> error )
@@ -77,15 +78,17 @@ class Blacklist(BaseRewardModel):
         self.preprocess = re.compile(preprocess) if preprocess else None
         self._last_update = 0
 
-        # Lossy sampling parameters 
-        self.support = support 
-        self.error = error 
-        self.window = math.ceil(1/self.error) # Window size, counter would get pruned once for each window. 
-        self.w_current = 1 # window index.
+        # Lossy sampling parameters
+        self.support = support
+        self.error = error
+        self.window = math.ceil(
+            1 / self.error
+        )  # Window size, counter would get pruned once for each window.
+        self.w_current = 1  # window index.
         self.num_ngram = 0
         self.num_completion = 0
-        
-        self.half_life = half_life  
+
+        self.half_life = half_life
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
         self.memory_lim = memory_lim
 
@@ -103,7 +106,6 @@ class Blacklist(BaseRewardModel):
             if ngrams:
                 self._add_ngrams(ngrams)
 
-
     def extract_ngrams(self, text: str) -> List[tuple]:
         """Extract n-grams from text string
 
@@ -117,12 +119,12 @@ class Blacklist(BaseRewardModel):
 
         if self.preprocess:
             # remove all punctuation
-            text = self.preprocess.sub('', text)
+            text = self.preprocess.sub("", text)
 
-        words = self.tokenizer(text.lower())['input_ids'][1:-1]
+        words = self.tokenizer(text.lower())["input_ids"][1:-1]
 
         if self.word_limit is not None:
-            words = words[:self.word_limit]
+            words = words[: self.word_limit]
 
         ngrams = []
         for i in range(self.n_min, self.n_max + 1):
@@ -142,48 +144,46 @@ class Blacklist(BaseRewardModel):
         for ngram in ngrams:
             if ngram in self.counter:
                 self.counter[ngram][0] += 1
-            else: 
+            else:
                 # Store the tuple (frequence, max_error)
                 self.counter[ngram] = [1, self.w_current - 1]
-            
+
             # Start the prune procedure periodically.
             self.num_ngram += 1
-        
+
         self.num_completion += 1
-        
+
         # Prune when move to next window.
         if self.num_completion % self.window == 0:
-            self.w_current = math.ceil(self.num_completion / self.window) 
+            self.w_current = math.ceil(self.num_completion / self.window)
             self.prune()
-        
+
         # Safety feature: prune when reached max memory size.
         if len(self.counter) > self.memory_lim:
             self.w_current += 1
             self.prune()
-        
-        # Apply half life for the counter 
+
+        # Apply half life for the counter
         if self.num_completion > self.half_life:
             self.set_counter_to_half()
 
     def prune(self):
-        """Prune the counter when the count is smaller then bucket index.  
-        """
+        """Prune the counter when the count is smaller then bucket index."""
         prune_ele = []
         for ele, (frequence, max_error) in self.counter.items():
             if frequence + max_error <= self.w_current:
                 prune_ele.append(ele)
-        
+
         for ele in prune_ele:
-            del self.counter[ele]  
+            del self.counter[ele]
 
     def reset(self):
-        """Reset counters to initial values.
-        """
+        """Reset counters to initial values."""
         self.num_ngram = 0
-        self.num_completion = 0 
-        self.w_current = 1 
+        self.num_completion = 0
+        self.w_current = 1
         self.counter = {}
-        self.significance_scores = {}  
+        self.significance_scores = {}
         self._last_update = 0
 
     def calculate_significance(self) -> dict:
@@ -195,11 +195,17 @@ class Blacklist(BaseRewardModel):
 
         significance_scores = {}
         for ngram, count in self.counter.items():
-            if count[0] + count[1] > max(self.support * self.num_completion, self.w_current + 1):
+            if count[0] + count[1] > max(
+                self.support * self.num_completion, self.w_current + 1
+            ):
                 decoded_ngram = self.tokenizer.decode(ngram)
                 if len(decoded_ngram.split()) >= self.n_min:
                     # calculate significance score for ngram
-                    significance_scores[decoded_ngram] = self.A ** (len(decoded_ngram) - 1) * ((count[0] + count[1]) / self.num_completion) * 100
+                    significance_scores[decoded_ngram] = (
+                        self.A ** (len(decoded_ngram) - 1)
+                        * ((count[0] + count[1]) / self.num_completion)
+                        * 100
+                    )
 
         self._last_update = self.num_completion
 
@@ -217,7 +223,7 @@ class Blacklist(BaseRewardModel):
 
         return self.significance_scores
 
-    def most_common(self, n:int = 10) -> dict:
+    def most_common(self, n: int = 10) -> dict:
         """Get most common n-grams in queue
 
         Args:
@@ -226,10 +232,11 @@ class Blacklist(BaseRewardModel):
         Returns:
             dict: Sorted dictionary of n-gram tuples and their counts
         """
-        return sorted(self.counter.items(), key=lambda x: x[1][0] + x[1][1], reverse=True)[:n]
-         
-    
-    def most_significant(self, n:int = 10, force_update:bool = True) -> dict:
+        return sorted(
+            self.counter.items(), key=lambda x: x[1][0] + x[1][1], reverse=True
+        )[:n]
+
+    def most_significant(self, n: int = 10, force_update: bool = True) -> dict:
         """Get most significant n-grams in queue based on significance scores
 
         Args:
@@ -240,17 +247,18 @@ class Blacklist(BaseRewardModel):
             dict: Sorted dictionary of n-gram tuples and their significance scores
         """
 
-
         scores = self.get_significance() if force_update else self.significance_scores
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:n]
 
     def set_counter_to_half(self):
-        """Set all the counters to half for a rolling window effect.
-        """
-        self.num_ngram = math.ceil(self.num_ngram/2)
-        self.num_completion = math.ceil(self.num_completion/2) 
-        self.w_current = math.ceil(self.num_completion / self.window) 
-        self.counter = { tokens: [ math.ceil(count[0]/2), math.ceil(count[1]/2)] for tokens, count in self.counter.items()}
+        """Set all the counters to half for a rolling window effect."""
+        self.num_ngram = math.ceil(self.num_ngram / 2)
+        self.num_completion = math.ceil(self.num_completion / 2)
+        self.w_current = math.ceil(self.num_completion / self.window)
+        self.counter = {
+            tokens: [math.ceil(count[0] / 2), math.ceil(count[1] / 2)]
+            for tokens, count in self.counter.items()
+        }
         self._last_update = 0
 
     def reward(self, prompt: str, completion: str, name: str) -> float:
@@ -272,11 +280,13 @@ class Blacklist(BaseRewardModel):
         scores = self.get_significance()
 
         # Check if any n-grams have significance above the boundary
-        for ngram, score in scores.items(): 
-            if (score > self.boundary and 
-                fuzz.partial_ratio(ngram, completion.lower()) > self.partial_ratio_boundary
+        for ngram, score in scores.items():
+            if (
+                score > self.boundary
+                and fuzz.partial_ratio(ngram, completion.lower())
+                > self.partial_ratio_boundary
             ):
-                    return 0
+                return 0
 
         return 1
 
