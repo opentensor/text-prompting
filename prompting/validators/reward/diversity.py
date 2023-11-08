@@ -20,9 +20,9 @@ import torch
 import torch.nn.functional as F
 from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import AutoTokenizer, AutoModel
-
+from dataclasses import dataclass
 from torchmetrics.functional import pairwise_cosine_similarity
 
 
@@ -47,6 +47,10 @@ def mean_pooling(model_output, attention_mask):
         input_mask_expanded.sum(1), min=1e-9
     )
 
+@dataclass
+class DiversityRewardEvent(BaseRewardEvent):
+    historic: float = None
+    batch: float = None
 
 class DiversityRewardModel(BaseRewardModel):
     diversity_model_path = "sentence-transformers/all-mpnet-base-v2"
@@ -153,7 +157,7 @@ class DiversityRewardModel(BaseRewardModel):
 
         return regularise(rewards)
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[DiversityRewardEvent]:
         # Check if completions are empty, return 0 if so
         if len(completions) == 0:
             return torch.tensor([]).to(self.device), None
@@ -169,11 +173,15 @@ class DiversityRewardModel(BaseRewardModel):
 
         self.update_historic_embeddings(embeddings)
 
-        # Return all
+        reward_events = []
         if historic_rewards != None:
-            return {"reward": batch_rewards * historic_rewards}
+            for b, h in zip(batch_rewards.tolist(), historic_rewards.tolist()):
+                reward_events.append(DiversityRewardEvent(reward = b*h, batch = b, historic = h))
         else:
-            return {"reward": batch_rewards}
+            for b in batch_rewards.tolist():
+                reward_events.append(DiversityRewardEvent(reward = b, batch = b))
+
+        return reward_events
 
     def normalize_rewards(self, raw_rewards: torch.FloatTensor) -> torch.FloatTensor:
         # Applies binarization on the rewards.

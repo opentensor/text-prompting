@@ -51,7 +51,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
 
     def reward_single(
         self, prompt: str, completion: str, name: str, with_penalty=True
-    ) -> float:
+    ) -> BaseRewardEvent:
         r"""Calculates a direct preference optimization (DPO) style reward for a completion,
         which is a reference model's average log-probability for completion tokens given a prompt.
         Uses guidance from https://github.com/eric-mitchell/direct-preference-optimization/blob/main/trainers.py.
@@ -139,19 +139,12 @@ class DirectPreferenceRewardModel(BaseRewardModel):
             reward_event.reward = reward.item()
             return reward_event
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[BaseRewardEvent]:
         # Get all the reward results.
         reward_events = [
             self.reward_single(prompt, completion, name) for completion in completions
         ]
 
-        # Parse the result and generate an event to be logged.
-        parsed_reward_events = BaseRewardEvent.parse_reward_events(reward_events)
-
-        parsed_reward_events["reward"] = torch.tensor(
-            parsed_reward_events["reward"], dtype=torch.float32
-        ).to(self.device)
-
         bt.logging.trace(f"DirectPreferenceRewardModel | rewards: {rewards.tolist()}")
 
-        return parsed_reward_events
+        return reward_events

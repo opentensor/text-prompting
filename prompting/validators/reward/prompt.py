@@ -102,7 +102,7 @@ class PromptRewardModel(BaseRewardModel):
             reward_event.reward = score
             return reward_event
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[BaseRewardEvent]:
         bt.logging.debug(
             f"PromptRewardModel | Calculating {len(completions)} rewards (typically < 1 sec/reward)."
         )
@@ -114,11 +114,4 @@ class PromptRewardModel(BaseRewardModel):
             self.reward(prompt, completion, name) for completion in completions
         ]
 
-        # Parse the result and generate an event to be logged.
-        parsed_reward_events = BaseRewardEvent.parse_reward_events(reward_events)
-
-        parsed_reward_events["reward"] = torch.tensor(
-            parsed_reward_events["reward"], dtype=torch.float32
-        ).to(self.device)
-
-        return parsed_reward_events
+        return reward_events

@@ -305,21 +305,12 @@ class Blacklist(BaseRewardModel):
         reward_event.reward = 1
         return reward_event
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[BlacklistRewardEvent]:
         # Get all the reward results.
         reward_events = [
             self.reward(prompt, completion, name) for completion in completions
         ]
-
-        # Parse the result and generate an event to be logged.
-        parsed_reward_events = BlacklistRewardEvent.parse_reward_events(reward_events)
-
-        # Change the reward into tensor object
-        parsed_reward_events["reward"] = torch.tensor(
-            parsed_reward_events["reward"], dtype=torch.float32
-        )
-
-        return parsed_reward_events
+        return reward_events
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards

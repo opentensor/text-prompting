@@ -68,20 +68,12 @@ class RelevanceRewardModel(BaseRewardModel):
         ]
         self.bounds = [-0.0246, 0.3]
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[RelevanceRewardEvent]:
         # Get all the reward results.
         reward_events = [
             self.reward(prompt, completion, name) for completion in completions
         ]
-
-        # Parse the result and generate an event to be logged.
-        parsed_reward_events = RelevanceRewardEvent.parse_reward_events(reward_events)
-
-        parsed_reward_events["reward"] = torch.tensor(
-            parsed_reward_events["reward"], dtype=torch.float32
-        ).to(self.device)
-
-        return parsed_reward_events
+        return reward_events
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards

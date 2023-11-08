@@ -40,7 +40,7 @@ class OpenAssistantRewardModel(BaseRewardModel):
             OpenAssistantRewardModel.reward_model_name
         ).to(self.device)
 
-    def reward_single(self, prompt: str, completion: str, name: str) -> float:
+    def reward_single(self, prompt: str, completion: str, name: str) -> BaseRewardEvent:
         reward_event = BaseRewardEvent()
 
         with torch.no_grad():
@@ -50,17 +50,10 @@ class OpenAssistantRewardModel(BaseRewardModel):
             reward_event.reward = float(self.model(**inputs).logits[0].cpu().detach())
             return reward_event
 
-    def get_rewards(self, prompt: str, completions: List[str], name: str) -> dict:
+    def get_rewards(self, prompt: str, completions: List[str], name: str) -> List[BaseRewardEvent]:
         # Get all the reward results.
         reward_events = [
             self.reward_single(prompt, completion, name) for completion in completions
         ]
 
-        # Parse the result and generate an event to be logged.
-        parsed_reward_events = BaseRewardEvent.parse_reward_events(reward_events)
-
-        parsed_reward_events["reward"] = torch.tensor(
-            parsed_reward_events["reward"], dtype=torch.float32
-        ).to(self.device)
-
-        return parsed_reward_events
+        return reward_events
