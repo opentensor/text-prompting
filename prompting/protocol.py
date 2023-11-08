@@ -160,17 +160,6 @@ class StreamPrompting(bt.StreamingSynapse):
     - `extract_response_json`: Extracts relevant JSON data from the response, useful for gaining insights on the response's
                                metadata or for debugging purposes.
 
-    Example usage:
-    ```python
-    stream_prompter = StreamPrompting(roles=["role1", "role2"], messages=["message1", "message2"])
-    # Process a streaming response...
-    stream_prompter.process_streaming_response(response)
-    # Access the result
-    result = stream_prompter.deserialize()
-    # Extract response metadata
-    json_info = stream_prompter.extract_response_json(response)
-    ```
-
     Note: While you can directly use the `StreamPrompting` class, it's designed to be extensible. Thus, you can create
     subclasses to further customize behavior for specific prompting scenarios or requirements.
     """
@@ -215,18 +204,6 @@ class StreamPrompting(bt.StreamingSynapse):
         Args:
             response: The streaming response object containing the content chunks to be processed. Each chunk in this
                       response is expected to be a set of tokens that can be decoded and split into individual messages or prompts.
-
-        Usage:
-            Generally, this method is called when there's an incoming streaming response to be processed.
-
-            ```python
-            stream_prompter = StreamPrompting(roles=["role1", "role2"], messages=["message1", "message2"])
-            await stream_prompter.process_streaming_response(response)
-            ```
-
-        Note:
-            It's important to remember that this method is asynchronous. Ensure it's called within an appropriate
-            asynchronous context.
         """
         if self.completion is None:
             self.completion = ""
@@ -235,6 +212,7 @@ class StreamPrompting(bt.StreamingSynapse):
             for token in tokens:
                 if token:
                     self.completion += token
+            yield tokens
 
     def deserialize(self) -> str:
         """
@@ -266,19 +244,6 @@ class StreamPrompting(bt.StreamingSynapse):
                 - Dendrite and Axon related information extracted from headers.
                 - Roles and Messages pertaining to the current StreamPrompting instance.
                 - The accumulated completion.
-
-        Usage:
-            This method can be used after processing a response to gather detailed metadata:
-
-            ```python
-            stream_prompter = StreamPrompting(roles=["role1", "role2"], messages=["message1", "message2"])
-            # After processing the response...
-            json_info = stream_prompter.extract_response_json(response)
-            ```
-
-        Note:
-            While the primary output is the structured dictionary, understanding this output can be instrumental in
-            troubleshooting or in extracting specific insights about the interaction with the Bittensor network.
         """
         headers = {
             k.decode("utf-8"): v.decode("utf-8")

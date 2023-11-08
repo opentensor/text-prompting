@@ -15,34 +15,26 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-from dataclasses import dataclass
-from enum import Enum
+import torch
+from typing import List
+from prompting.validators.tasks import Task
+from prompting.validators.penalty.penalty import BasePenaltyModel, PenaltyModelType
 
 
-class RewardModelType(Enum):
-    dpo = "dpo_reward_model"
-    rlhf = "rlhf_reward_model"
-    reciprocate = "reciprocate_reward_model"
-    dahoas = "dahoas_reward_model"
-    diversity = "diversity_reward_model"
-    prompt = "prompt_reward_model"
-    blacklist = "blacklist_filter"
-    nsfw = "nsfw_filter"
-    relevance = "relevance_filter"
-    relevance_bert = "relevance_bert"
-    relevance_mpnet = "relevance_mpnet"
-    task_validator = "task_validator_filter"
-    keyword_match = "keyword_match_penalty"
+class TaskValidationPenaltyModel(BasePenaltyModel):
+    @property
+    def name(self) -> str:
+        return PenaltyModelType.task_validation_penalty.value
 
+    def calculate_penalties(
+        self, task: Task, completions: List[str]
+    ) -> torch.FloatTensor:
+        accumulated_penalties: torch.FloatTensor = torch.zeros(
+            len(completions), dtype=torch.float32
+        )
 
-@dataclass(frozen=True)
-class DefaultRewardFrameworkConfig:
-    """Reward framework default configuration.
-    Note: All the weights should add up to 1.0.
-    """
+        # Accumulate penalties for each criterion
+        for criterion in task.criteria:
+            accumulated_penalties.add_(criterion.evaluate(completions))
 
-    dpo_model_weight: float = 0.425
-    rlhf_model_weight: float = 0.15
-    reciprocate_model_weight: float = 0.425
-    dahoas_model_weight: float = 0
-    prompt_model_weight: float = 0
+        return accumulated_penalties

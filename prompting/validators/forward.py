@@ -30,6 +30,12 @@ from prompting.validators.event import EventSchema
 from prompting.validators.misc import ttl_get_block
 from prompting.validators.prompts import followup_prompt, answer_prompt, augment_prompt
 from prompting.validators.utils import check_uid_availability
+from prompting.validators.tasks import (
+    Task,
+    create_summarization_task,
+    create_qg_task,
+    create_qa_task,
+)
 
 import prompting
 
@@ -69,22 +75,14 @@ def get_random_uids(self, k: int, exclude: List[int] = None) -> torch.LongTensor
     return uids
 
 
-async def run_step(
-    self,
-    prompt: str,
-    k: int,
-    timeout: float,
-    name: str,
-    exclude: list = [],
-    base_prompt=None,
-):
-    if base_prompt == None:
-        base_prompt = prompt
+async def run_step(self, task: Task, k: int, timeout: float, exclude: list = []):
+    task_name = task.task_name
+    prompt = task.compose_prompt()
 
-    bt.logging.debug("run_step", name)
+    bt.logging.debug("run_step", task_name)
 
     # Record event start time.
-    event = {"name": name}
+    event = {"name": task_name, "task_type": task.task_type}
     start_time = time.time()
     # Get the list of uids to query for this step.
     uids = get_random_uids(self, k=k, exclude=exclude).to(self.device)
@@ -108,7 +106,7 @@ async def run_step(
         # remove leading and trailing periods
         completion = response.completion.strip(".")
 
-        if "followup" in name and len(completion) > 0:
+        if "followup" in task_name and len(completion) > 0:
             if "?" in completion:
                 # take first question that is found and only use the sentence before the question mark
                 completion = completion.split("?")[0].split(".")[-1]
@@ -138,6 +136,19 @@ async def run_step(
         if not self.config.neuron.disable_log_rewards:
             event = {**event, **reward_event}
         bt.logging.trace(str(masking_fn_i.name), mask_i_normalized.tolist())
+
+    for penalty_fn_i in self.penalty_functions:
+        (
+            raw_penalty_i,
+            adjusted_penalty_i,
+            applied_penalty_i,
+        ) = penalty_fn_i.apply_penalties(responses, task)
+        rewards *= applied_penalty_i.to(self.device)
+        if not self.config.neuron.disable_log_rewards:
+            event[penalty_fn_i.name + "_raw"] = raw_penalty_i.tolist()
+            event[penalty_fn_i.name + "_adjusted"] = adjusted_penalty_i.tolist()
+            event[penalty_fn_i.name + "_applied"] = applied_penalty_i.tolist()
+        bt.logging.trace(str(penalty_fn_i.name), applied_penalty_i.tolist())
 
     # Train the gating model based on the predicted scores and the actual rewards.
     gating_scores: torch.FloatTensor = self.gating_model(prompt).to(self.device)
@@ -214,65 +225,54 @@ async def forward(self):
     random_cutoff = random.randint(15, 30)
     # Truncate context to a limited set of sentences.
     base_text = ".".join(data.split(".", maxsplit=random_cutoff)[:-1])
-    aug_prompt = augment_prompt(base_text)
+
+    # Create a summary task from the context.
+    summary_task: Task = create_summarization_task(base_text)
 
     # Reset Blacklist reward model
     self.blacklist.reset()
 
     # Request a summary, given the original context.
-    augment_event = await run_step(
+    summarization_event = await run_step(
         self,
-        prompt=aug_prompt,
-        name="augment",
+        task=summary_task,
         k=self.config.neuron.followup_sample_size,
         timeout=self.config.neuron.followup_timeout,
     )
 
-    base_text = augment_event["best"]
-    base_prompt = augment_event["best"]
-    exclude = augment_event["uids"]
+    best_summary = summarization_event["best"]
+    exclude = summarization_event["uids"]
+    prompt_context = "### SUMMARY CONTEXT:\n" + best_summary
 
     for k in range(self.config.neuron.num_followup_steps):
         # Get a followup question, given the summarized context.
-        prompt = followup_prompt(base_text, i=k)
-        followup_event = await run_step(
+        qg_task = create_qg_task(base_text=prompt_context, index=k)
+        qg_event = await run_step(
             self,
-            prompt=prompt,
-            name="followup" + str(k),
+            task=qg_task,
             k=self.config.neuron.followup_sample_size,
             timeout=self.config.neuron.followup_timeout,
             exclude=exclude,
-            base_prompt=base_prompt,
         )
-        exclude += followup_event["uids"]
+        exclude += qg_event["uids"]
 
-        # Ask the followup question, given the original context.
-        prompt = answer_prompt(base_text, followup_event["best"])
-        answer_event = await run_step(
+        # Adds the best question to the prompt context.
+        best_question = qg_event["best"]
+        prompt_context += f"\n### QUESTION {k}:\n{best_question}"
+
+        qa_task = create_qa_task(prompt_context, index=k)
+        qa_event = await run_step(
             self,
-            prompt=prompt,
-            name="answer" + str(k),
+            task=qa_task,
             k=self.config.neuron.answer_sample_size,
             timeout=self.config.neuron.answer_timeout,
             exclude=exclude,
-            base_prompt=followup_event["best"],
         )
-        exclude += answer_event["uids"]
 
-        if k == 0:
-            # Extend the base text with the best answer.
-            base_text = (
-                base_text
-                + "\nPrevious Question \nQuestion:"
-                + followup_event["best"]
-                + "\nAnswer:"
-                + answer_event["best"]
-            )
-        else:
-            base_text = (
-                base_text
-                + "\nQuestion:"
-                + followup_event["best"]
-                + "\nAnswer:"
-                + answer_event["best"]
-            )
+        best_answer = qa_event["best"]
+        prompt_context += f"\n### ANSWER {k}:\n{best_answer}"
+
+        exclude += qa_event["uids"]
+
+        self.blacklist.question_blacklist.append(qg_event["best"])
+        self.blacklist.answer_blacklist.append(qa_event["best"])

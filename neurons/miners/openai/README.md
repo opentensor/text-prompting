@@ -38,7 +38,7 @@ usage: miner.py [-h] [--axon.port AXON.PORT] [--subtensor.network SUBTENSOR.NETW
                 [--miner.blacklist.force_validator_permit] [--miner.blacklist.allow_non_registered] [--miner.blacklist.minimum_stake_requirement MINER.BLACKLIST.MINIMUM_STAKE_REQUIREMENT]
                 [--miner.blacklist.prompt_cache_block_span MINER.BLACKLIST.PROMPT_CACHE_BLOCK_SPAN] [--miner.blacklist.use_prompt_cache] [--miner.blacklist.min_request_period MINER.BLACKLIST.MIN_REQUEST_PERIOD]
                 [--miner.priority.default MINER.PRIORITY.DEFAULT] [--miner.priority.time_stake_multiplicate MINER.PRIORITY.TIME_STAKE_MULTIPLICATE]
-                [--miner.priority.len_request_timestamps MINER.PRIORITY.LEN_REQUEST_TIMESTAMPS] [--miner.no_set_weights] [--miner.no_serve] [--miner.no_start_axon] [--miner.no_register] [--miner.mock_subtensor] [--wandb.on]
+                [--miner.priority.len_request_timestamps MINER.PRIORITY.LEN_REQUEST_TIMESTAMPS] [--miner.no_set_weights] [--miner.no_serve] [--miner.no_start_axon] [--miner.mock_subtensor] [--wandb.on]
                 [--wandb.project_name WANDB.PROJECT_NAME] [--wandb.entity WANDB.ENTITY] [--logging.debug] [--logging.trace] [--logging.record_log] [--logging.logging_dir LOGGING.LOGGING_DIR] [--wallet.name WALLET.NAME]
                 [--wallet.hotkey WALLET.HOTKEY] [--wallet.path WALLET.PATH] [--config CONFIG] [--strict] [--no_version_checking] [--no_prompt]
 
@@ -84,7 +84,6 @@ options:
   --miner.no_serve      If True, the miner doesnt serve the axon.
   --miner.no_start_axon
                         If True, the miner doesnt start the axon.
-  --miner.no_register   If True, the miner doesnt register its wallet.
   --miner.mock_subtensor
                         If True, the miner will allow non-registered hotkeys to mine.
   --wandb.on            Turn on wandb.
