@@ -97,7 +97,9 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
     )
 
     # Update blacklist with completions so that n-gram filtering can be applied
-    self.blacklist.add([response.completion for response in responses if response.completion])
+    self.blacklist.add(
+        [response.completion for response in responses if response.completion]
+    )
 
     # Restrict the format of acceptable followup completions.
     for response in responses:
