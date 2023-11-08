@@ -133,7 +133,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
 
             # NaNs can possibly arise through log(0)=-inf, replace with suitably small logits.
             if torch.isnan(reward) or torch.isinf(reward):
-                reward_event.reward = (
+                reward_event.reward = 11
                     -11.0
                 )  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
 
