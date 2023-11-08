@@ -55,7 +55,7 @@ class Blacklist(BaseRewardModel):
             n_min (int, optional): Smallest ngram size. Defaults to 5.
             n_max (int, optional): Largest ngram size. Defaults to 14.
             word_limit (int, optional): Maximum word length, to prevent extremely long completions from overworking the queue. Defaults to 2000.
-            A (float, optional): Exponent used in significance scoring, smaller A gives more weight to smaller ngrams. Values of 1.1-2 are recommended. Defaults to 1.1.
+            A (float, optional): Exponent used in significance scoring, smaller A gives more weight to smaller ngrams. Values of 1.1-2 are recommended. Defaults to 1.3.
             preprocess (str, optional): Regex preprocessing string to make text more uniform. Defaults to '[^(\w|\s)]'.
             partial_ratio_boundry (int, optional): Boundry for fuzzy match. Default to 95.
             half_life (int, optional): Half life of the counter. ie. When the number of completions processed > half life, then put all the counters in half.
@@ -148,7 +148,7 @@ class Blacklist(BaseRewardModel):
             if ngram in self.counter:
                 self.counter[ngram][0] += 1
             else:
-                # Store the tuple (frequence, max_error)
+                # Store the tuple (frequency, max_error)
                 self.counter[ngram] = [1, self.w_current - 1]
 
             self.num_ngram += 1
@@ -172,8 +172,8 @@ class Blacklist(BaseRewardModel):
     def prune(self):
         """Prune the counter when the count is smaller then bucket index."""
         prune_ele = []
-        for ele, (frequence, max_error) in self.counter.items():
-            if frequence + max_error <= self.w_current:
+        for ele, (frequency, max_error) in self.counter.items():
+            if frequency + max_error <= self.w_current:
                 prune_ele.append(ele)
 
         for ele in prune_ele:
