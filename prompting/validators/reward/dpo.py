@@ -84,7 +84,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
                 reward_event.reward = -11.0
                 return reward_event
                   
-                )
+                
 
             # Truncate combined to fit into model max sequence length.
             if self.tokenizer.model_max_length < len(combined):
