@@ -135,7 +135,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
             if torch.isnan(reward) or torch.isinf(reward):
                 reward_event.reward = 11
                     
-                )  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+            
 
             reward_event.reward = reward.item()
             return reward_event
