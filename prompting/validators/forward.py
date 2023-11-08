@@ -257,7 +257,9 @@ async def forward(self):
 
         # Adds the best question to the prompt context.
         best_question = qg_event["best"]
-        best_question_prompt = best_summary_context + f"\n### QUESTION {k}:\n{best_question}"        
+        best_question_prompt = (
+            best_summary_context + f"\n### QUESTION {k}:\n{best_question}"
+        )
 
         qa_task = create_qa_task(best_question_prompt, index=k)
         qa_event = await run_step(
@@ -267,7 +269,7 @@ async def forward(self):
             timeout=self.config.neuron.answer_timeout,
             exclude=exclude,
         )
-        
+
         exclude += qa_event["uids"]
 
         self.blacklist.question_blacklist.append(qg_event["best"])

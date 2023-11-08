@@ -100,7 +100,7 @@ class QuestionAnswerTask(Task):
         criteria_bullet_points_str = "\n".join(criteria_bullet_points)
 
         prompt_template = textwrap.dedent(
-        """\
+            """\
         Read the preceding context delimited with triple backticks carefully.
         Your task is to provide a a clear and direct answer to the last question found in the text.        
         Maintain an objective tone by sticking to factual information and logical deductions without personal opinions or emotional language:
