@@ -65,7 +65,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
                 # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
                 reward_event.reward = -11.0
                     -11.0
-                )  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+               
                 return reward_event
 
             # Tokenize the combined prompt + completion.
