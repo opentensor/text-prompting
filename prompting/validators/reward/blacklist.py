@@ -45,22 +45,24 @@ class Blacklist(BaseRewardModel):
         support: float = 0.01,
         error: float = 0.001,
         memory_lim: int = 1_000_000,
+        frequency_multiplier: float = 100,
     ):
         """N-gram blacklist reward model which penalizes overused phrases in the network
 
         Args:
-            boundary (float, optional): Cutoff for flagging completions and giving zero reward. Defaults to 3.
+            boundary (float, optional): Cutoff for flagging completions and giving zero reward. Defaults to 6.
             max_size (int, optional): Maximum size of sliding window to use for aggregating ngrams. Defaults to 1_000_000.
             n_min (int, optional): Smallest ngram size. Defaults to 5.
             n_max (int, optional): Largest ngram size. Defaults to 14.
             word_limit (int, optional): Maximum word length, to prevent extremely long completions from overworking the queue. Defaults to 2000.
             A (float, optional): Exponent used in significance scoring, smaller A gives more weight to smaller ngrams. Values of 1.1-2 are recommended. Defaults to 1.1.
             preprocess (str, optional): Regex preprocessing string to make text more uniform. Defaults to '[^(\w|\s)]'.
-            partial_ratio_boundry (int, optional): Boundry for fuzzy match.
+            partial_ratio_boundry (int, optional): Boundry for fuzzy match. Default to 95.
             half_life (int, optional): Half life of the counter. ie. When the number of completions processed > half life, then put all the counters in half.
             support (float, optional): The percentage of times that a phrase need to appear to get the phrase kept in counter. (support should be >> counter)
             error (float, optional): Error parameter for lossy sampling, should be as small as possible, further decreasing it further will increase memory usage. (support should be >> error )
             memory_lim (int, optional): Max number of counter entry to save for memory protection.
+            frequency_multiplier (float, optional): Multiplier for phrases frequency. Default to 100. 
         """
         super().__init__()
 
@@ -91,6 +93,7 @@ class Blacklist(BaseRewardModel):
         self.half_life = half_life
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
         self.memory_lim = memory_lim
+        self.frequency_multiplier = frequency_multiplier
 
     def add(self, texts: List[str]):
         """Extract and add n-grams from a list of texts to counter
@@ -148,7 +151,6 @@ class Blacklist(BaseRewardModel):
                 # Store the tuple (frequence, max_error)
                 self.counter[ngram] = [1, self.w_current - 1]
 
-            # Start the prune procedure periodically.
             self.num_ngram += 1
 
         self.num_completion += 1
@@ -204,7 +206,7 @@ class Blacklist(BaseRewardModel):
                     significance_scores[decoded_ngram] = (
                         self.A ** (len(decoded_ngram) - 1)
                         * ((count[0] + count[1]) / self.num_completion)
-                        * 100
+                        * self.frequency_multiplier
                     )
 
         self._last_update = self.num_completion
