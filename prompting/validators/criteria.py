@@ -209,3 +209,34 @@ class SimpleResponseLayoutCriteria(TaskCriterion):
 
     def compose_text(self) -> str:
         return self.text
+
+class LayoutMatchTypeEnum(Enum):
+    UNORDERED_LIST = "unordered list"
+    NUMBERED_LIST = "numbered list"    
+
+@dataclass
+class MatchLayoutCriteria(TaskCriterion):
+    layout_type: LayoutMatchTypeEnum = LayoutMatchTypeEnum.UNORDERED_LIST
+    penalty: float = 0.1
+    text: str = "Your response should be ordered in format of {layout_type}."
+
+    def evaluate(self, completions: List[str]) -> torch.FloatTensor:
+        penalties = torch.zeros(len(completions), dtype=torch.float32)
+
+        # Regex patterns based on layout type
+        bullet_point_pattern = re.compile(r"(\*|\-|\+|\•|\‣|\◦)\s")
+        numbered_list_pattern = re.compile(r"\d+\.\s")
+
+        for idx, completion in enumerate(completions):
+            # Evaluate based on the layout type
+            if self.layout_type == LayoutMatchTypeEnum.UNORDERED_LIST :
+                if not bullet_point_pattern.search(completion):
+                    penalties[idx] = self.penalty
+            elif self.layout_type == LayoutMatchTypeEnum.NUMBERED_LIST :
+                if not numbered_list_pattern.search(completion):
+                    penalties[idx] = self.penalty
+
+        return penalties
+
+    def compose_text(self) -> str:
+        return self.text.format(layout_type=self.layout_type)
