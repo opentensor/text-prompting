@@ -210,9 +210,11 @@ class SimpleResponseLayoutCriteria(TaskCriterion):
     def compose_text(self) -> str:
         return self.text
 
+
 class LayoutMatchTypeEnum(Enum):
     UNORDERED_LIST = "unordered list"
-    NUMBERED_LIST = "numbered list"    
+    NUMBERED_LIST = "numbered list"
+
 
 @dataclass
 class MatchLayoutCriteria(TaskCriterion):
@@ -229,10 +231,10 @@ class MatchLayoutCriteria(TaskCriterion):
 
         for idx, completion in enumerate(completions):
             # Evaluate based on the layout type
-            if self.layout_type == LayoutMatchTypeEnum.UNORDERED_LIST :
+            if self.layout_type == LayoutMatchTypeEnum.UNORDERED_LIST:
                 if not bullet_point_pattern.search(completion):
                     penalties[idx] = self.penalty
-            elif self.layout_type == LayoutMatchTypeEnum.NUMBERED_LIST :
+            elif self.layout_type == LayoutMatchTypeEnum.NUMBERED_LIST:
                 if not numbered_list_pattern.search(completion):
                     penalties[idx] = self.penalty
 
