@@ -18,7 +18,7 @@
 import torch
 from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 
 
 class TaskValidator(BaseRewardModel):
@@ -29,7 +29,10 @@ class TaskValidator(BaseRewardModel):
     def __init__(self):
         super().__init__()
 
-    def reward(self, prompt: str, completion: str, name: str) -> float:
+    def reward(self, prompt: str, completion: str, name: str) -> BaseRewardEvent:
+        
+        reward_event = BaseRewardEvent() 
+        
         summary_keywords = ["Summary:", "Paraphrase:", "Paraphrasing:", "Paraphrased:"]
         question_keywords = ["Question:", "Query:", "Q:"]
         answer_keywords = ["Answer:", "Response:", "A:", "Completion:"]
@@ -54,25 +57,34 @@ class TaskValidator(BaseRewardModel):
         if (
             is_summarization_prompt or is_question_prompt
         ) and completion_contains_answer:
-            return 0.0
+            reward_event.reward = 0.0
+            return reward_event
 
         if (
             is_summarization_prompt or is_answer_prompt
         ) and completion_contains_question:
-            return 0.0
+            reward_event.reward = 0.0
+            return reward_event
 
         if not is_summarization_prompt and completion_contains_summary:
-            return 0.0
+            reward_event.reward = 0.0
+            return reward_event
 
-        return 1
+        reward_event.reward = 1
+        return reward_event
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> Union[torch.FloatTensor, dict]:
-        return torch.tensor(
-            [self.reward(prompt, completion, name) for completion in completions],
-            dtype=torch.float32,
-        ), None
+    ) -> dict:
+        # Get all the reward results.
+        reward_events = [self.reward(prompt, completion, name) for completion in completions]
+
+        # Parse the result and generate an event to be logged.
+        parsed_reward_events = BaseRewardEvent.parse_reward_events(reward_events)
+
+        parsed_reward_events['reward'] = torch.tensor(parsed_reward_events['reward'], dtype=torch.float32)
+
+        return parsed_reward_events
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards

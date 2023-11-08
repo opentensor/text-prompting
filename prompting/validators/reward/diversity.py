@@ -18,7 +18,7 @@
 
 import torch
 import torch.nn.functional as F
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
 from .reward import BaseRewardModel
 from transformers import AutoTokenizer, AutoModel
@@ -155,7 +155,8 @@ class DiversityRewardModel(BaseRewardModel):
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> Union[torch.FloatTensor, dict]:
+    ) -> dict:
+
         # Check if completions are empty, return 0 if so
         if len(completions) == 0:
             return torch.tensor([]).to(self.device), None
@@ -173,9 +174,9 @@ class DiversityRewardModel(BaseRewardModel):
 
         # Return all
         if historic_rewards != None:
-            return batch_rewards * historic_rewards, None
+            return {'reward': batch_rewards * historic_rewards}
         else:
-            return batch_rewards, None
+            return {'reward': batch_rewards}
 
     def normalize_rewards(self, raw_rewards: torch.FloatTensor) -> torch.FloatTensor:
         # Applies binarization on the rewards.

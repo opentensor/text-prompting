@@ -19,11 +19,11 @@
 import torch
 from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import AutoTokenizer, AutoModel
 from torchmetrics.functional import pairwise_cosine_similarity
 import torch.nn.functional as F
-from dataclasses import dataclass, asdict, fields
+from dataclasses import dataclass
 
 
 def mean_pooling(model_output, attention_mask):
@@ -47,14 +47,12 @@ def mean_pooling(model_output, attention_mask):
         input_mask_expanded.sum(1), min=1e-9
     )
 
+@dataclass
+class RelevanceRewardEvent(BaseRewardEvent):
+    bert_relevancy_score: float = None
+    mpnet_relevancy_score: float = None
 
 class RelevanceRewardModel(BaseRewardModel):
-    @dataclass
-    class RewardResult():
-        reward: int = 1
-        bert_relevancy_score: float = None
-        mpnet_relevancy_score: float = None
-
     @property
     def name(self) -> str:
         return RewardModelType.relevance.value
@@ -68,39 +66,25 @@ class RelevanceRewardModel(BaseRewardModel):
         ]
         self.bounds = [-0.0246, 0.3]
 
-    def parse_reward_results(self, reward_results):
-        field_names = [field.name for field in fields(self.RewardResult)]
-        
-        reward_results = [asdict(reward_result).values() for reward_result in reward_results]
-
-        reward_event = dict(zip(field_names, list(zip(*reward_results))))
-
-        reward = reward_event['reward']
-        
-        del reward_event['reward']
-        
-        return reward, reward_event
-
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> Union[torch.FloatTensor, dict]:
+    ) -> dict:
         # Get all the reward results.
-        reward_results = [self.reward(prompt, completion, name) for completion in completions]
+        reward_events = [self.reward(prompt, completion, name) for completion in completions]
 
         # Parse the result and generate an event to be logged.
-        reward, reward_event = self.parse_reward_results(reward_results)
+        parsed_reward_events = RelevanceRewardEvent.parse_reward_events(reward_events)
 
-        reward = torch.tensor(reward, dtype=torch.float32)
+        parsed_reward_events['reward'] = torch.tensor(parsed_reward_events['reward'], dtype=torch.float32).to(self.device)
 
-        return reward, reward_event
-
+        return parsed_reward_events
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards
 
-    def reward(self, prompt: str, completion: str, name: str) -> float:
+    def reward(self, prompt: str, completion: str, name: str) -> RelevanceRewardEvent:
 
-        result = RelevanceRewardModel.RewardResult()
+        reward_event = RelevanceRewardEvent()
 
         for i, model in enumerate(self.models):
             # rewards
@@ -108,16 +92,16 @@ class RelevanceRewardModel(BaseRewardModel):
 
             # If a model returns 0, stop iterating and return 0
             if diff < self.bounds[i]:
-                result.reward = 0
+                reward_event.reward = 0
 
             if model.name == 'relevance_bert':
-                result.bert_relevancy_score = diff
+                reward_event.bert_relevancy_score = diff
             
             elif model.name == 'relevance_mpnet':
-                result.mpnet_relevancy_score = diff
+                reward_event.mpnet_relevancy_score = diff
         
         # If none of the models returned 0, return 1
-        return result
+        return reward_event
 
 
 class BertRelevanceRewardModel(BaseRewardModel):

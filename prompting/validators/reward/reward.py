@@ -20,7 +20,18 @@ import torch
 import bittensor as bt
 from typing import List, Union
 from abc import abstractmethod
+from dataclasses import dataclass, asdict, fields
 
+@dataclass
+class BaseRewardEvent:
+    reward: float = 1.
+    normalized_reward: float = None
+
+    def parse_reward_events(reward_events):
+        field_names = [field.name for field in fields(reward_events[0])]
+        reward_events = [asdict(reward_event).values() for reward_event in reward_events]
+        reward_event = dict(zip(field_names, list(zip(*reward_events))))
+        return reward_event
 
 class BaseRewardModel:
     @property
@@ -117,7 +128,8 @@ class BaseRewardModel:
         ]
 
         # Reward each completion.
-        successful_rewards, reward_event = self.get_rewards(prompt, successful_completions, name)
+        reward_event = self.get_rewards(prompt, successful_completions, name)
+        successful_rewards = reward_event.pop('reward')
 
         # Softmax rewards across samples.
         successful_rewards_normalized = self.normalize_rewards(successful_rewards)
@@ -135,11 +147,10 @@ class BaseRewardModel:
             filled_rewards[idx] = reward
             filled_rewards_normalized[idx] = reward_normalized
 
-        if not reward_event:
-            reward_event = {}    
-        
-        reward_event[reward_fn_i.name] = filled_rewards.tolist()
-        reward_event[reward_fn_i.name + "_normalized"] = filled_rewards_normalized.tolist()
- 
+        # Name each item of the reward event with the reward model name. 
+        reward_event = { f"{self.name}_{k}": v for k, v in reward_event.items()}
+        reward_event[self.name] = filled_rewards.tolist()
+        reward_event[self.name + "_normalized"] = filled_rewards_normalized.tolist()
+
         # Return the filled rewards.
         return filled_rewards_normalized, reward_event

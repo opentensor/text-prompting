@@ -19,7 +19,7 @@
 import torch
 from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 
@@ -41,19 +41,25 @@ class OpenAssistantRewardModel(BaseRewardModel):
         ).to(self.device)
 
     def reward_single(self, prompt: str, completion: str, name: str) -> float:
+        
+        reward_event = BaseRewardEvent()
+
         with torch.no_grad():
             inputs = self.tokenizer(prompt, completion, return_tensors="pt").to(
                 self.device
             )
-            return float(self.model(**inputs).logits[0].cpu().detach())
+            reward_event.reward = float(self.model(**inputs).logits[0].cpu().detach())
+            return reward_event
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> Union[torch.FloatTensor, dict]:
-        return torch.tensor(
-            [
-                self.reward_single(prompt, completion, name)
-                for completion in completions
-            ],
-            dtype=torch.float32,
-        ).to(self.device), None
+    ) -> dict:
+        # Get all the reward results.
+        reward_events = [self.reward_single(prompt, completion, name) for completion in completions]
+
+        # Parse the result and generate an event to be logged.
+        parsed_reward_events = BaseRewardEvent.parse_reward_events(reward_events)
+
+        parsed_reward_events['reward'] = torch.tensor(parsed_reward_events['reward'], dtype=torch.float32).to(self.device)
+
+        return parsed_reward_events

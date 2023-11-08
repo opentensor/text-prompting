@@ -19,7 +19,7 @@
 import torch
 from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 
@@ -44,7 +44,8 @@ class ReciprocateRewardModel(BaseRewardModel):
             torch_dtype=torch.float16,
         ).to(self.device)
 
-    def reward(self, prompt: str, completion: str, name: str) -> float:
+    def reward(self, prompt: str, completion: str, name: str) -> BaseRewardEvent:
+        reward_event = BaseRewardEvent()
         with torch.no_grad():
             message = (
                 f"<|prompter|>{prompt}</s><|assistant|>{completion}</s><|endoftext|>"
@@ -54,12 +55,18 @@ class ReciprocateRewardModel(BaseRewardModel):
                 return_tensors="pt",
                 truncation=True,
             ).to(self.device)
-            return float(self.model(**inputs)[0].item())
+            reward_event.reward = float(self.model(**inputs)[0].item())
+            return reward_event
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> Union[torch.FloatTensor, dict]:
-        return torch.tensor(
-            [self.reward(prompt, completion, name) for completion in completions],
-            dtype=torch.float32,
-        ).to(self.device), None
+    ) -> dict:
+        # Get all the reward results.
+        reward_events = [self.reward(prompt, completion, name) for completion in completions]
+
+        # Parse the result and generate an event to be logged.
+        parsed_reward_events = BaseRewardEvent.parse_reward_events(reward_events)
+
+        parsed_reward_events['reward'] = torch.tensor(parsed_reward_events['reward'], dtype=torch.float32).to(self.device)
+
+        return parsed_reward_events

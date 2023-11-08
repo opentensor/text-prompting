@@ -22,19 +22,18 @@ import math
 from fuzzywuzzy import fuzz
 from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import BertTokenizer
-from dataclasses import dataclass, asdict, fields
+from dataclasses import dataclass
 
 # TODO: Use CLI arguments to set blacklist values: the most important being the boundary value and max_size
+
+@dataclass
+class BlacklistRewardEvent(BaseRewardEvent):
+    matched_ngram: str = None
+    significance_score: float = None
+
 class Blacklist(BaseRewardModel):
-
-    @dataclass
-    class RewardResult():
-        reward: int = 1
-        matched_ngram: str = None
-        significance_score: float = None
-
     @property
     def name(self) -> str:
         return RewardModelType.blacklist.value
@@ -260,7 +259,7 @@ class Blacklist(BaseRewardModel):
         self.counter = { tokens: [ math.ceil(count[0]/2), math.ceil(count[1]/2)] for tokens, count in self.counter.items()}
         self._last_update = 0
 
-    def reward(self, prompt: str, completion: str, name: str) -> float:
+    def reward(self, prompt: str, completion: str, name: str) -> BlacklistRewardEvent:
         """Reward function for blacklist reward model. Returns 1 if completion contains an n-gram with significance above the boundary, 0 otherwise.
 
         Args:
@@ -272,11 +271,11 @@ class Blacklist(BaseRewardModel):
             float: Reward value {0,1}
         """
 
-        result = Blacklist.RewardResult()
+        reward_event = BlacklistRewardEvent()
 
         if completion in prompt:
-            result.reward = 0.0
-            return result
+            reward_event.reward = 0.0
+            return reward_event
 
         # Get significance scores
         scores = self.get_significance()
@@ -286,39 +285,27 @@ class Blacklist(BaseRewardModel):
             if (score > self.boundary and 
                 fuzz.partial_ratio(ngram, completion.lower()) > self.partial_ratio_boundary
             ):
-                    result.reward = 0
-                    result.matched_ngram = ngram
-                    result.significance_score = score
-                    return result
+                    reward_event.reward = 0
+                    reward_event.matched_ngram = ngram
+                    reward_event.significance_score = score
+                    return reward_event
 
-        result.reward = 1
-        return result
-
-    def parse_reward_results(self, reward_results):
-        field_names = [field.name for field in fields(self.RewardResult)]
-        
-        reward_results = [asdict(reward_result).values() for reward_result in reward_results]
-
-        reward_event = dict(zip(field_names, list(zip(*reward_results))))
-
-        reward = reward_event['reward']
-        
-        del reward_event['reward']
-        
-        return reward, reward_event
+        reward_event.reward = 1
+        return reward_event
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> Union[torch.FloatTensor, dict]:
+    ) -> dict:
         # Get all the reward results.
-        reward_results = [self.reward(prompt, completion, name) for completion in completions]
+        reward_events = [self.reward(prompt, completion, name) for completion in completions]
 
         # Parse the result and generate an event to be logged.
-        reward, reward_event = self.parse_reward_results(reward_results)
+        parsed_reward_events = BlacklistRewardEvent.parse_reward_events(reward_events)
 
-        reward = torch.tensor(reward, dtype=torch.float32)
+        # Change the reward into tensor object
+        parsed_reward_events['reward'] = torch.tensor(parsed_reward_events['reward'], dtype=torch.float32)
 
-        return reward, reward_event
+        return parsed_reward_events
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards
