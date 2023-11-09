@@ -62,9 +62,10 @@ class DirectPreferenceRewardModel(BaseRewardModel):
         with torch.no_grad():
             # Check if completion is
             if completion.strip() == "" or len(completion) <= 5:
-                reward_event.reward = (
+                # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+                reward_event.reward = -11.0
                     -11.0
-                )  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+               
                 return reward_event
 
             # Tokenize the combined prompt + completion.
@@ -81,9 +82,9 @@ class DirectPreferenceRewardModel(BaseRewardModel):
             # Completion doesn't fit into model sequence, so return lowest reward.
             if self.tokenizer.model_max_length <= len(prompt_part):
                 reward_event.reward = -11.0
-                return (
-                    reward_event  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
-                )
+                return reward_event
+                  
+                
 
             # Truncate combined to fit into model max sequence length.
             if self.tokenizer.model_max_length < len(combined):
@@ -132,9 +133,9 @@ class DirectPreferenceRewardModel(BaseRewardModel):
 
             # NaNs can possibly arise through log(0)=-inf, replace with suitably small logits.
             if torch.isnan(reward) or torch.isinf(reward):
-                reward_event.reward = (
-                    -11.0
-                )  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+                reward_event.reward = 11
+                    
+            
 
             reward_event.reward = reward.item()
             return reward_event
