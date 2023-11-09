@@ -277,8 +277,8 @@ class neuron:
             ]
 
             self.penalty_functions = [
-                TaskValidationPenaltyModel(max_penalty=0.1),
-                ContentMatchPenaltyModel(max_penalty=0.1),
+                TaskValidationPenaltyModel(max_penalty=0.6),
+                ContentMatchPenaltyModel(max_penalty=0.2),
                 KeywordMatchPenaltyModel(max_penalty=1),
             ]
 
