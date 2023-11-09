@@ -142,6 +142,8 @@ class DirectPreferenceRewardModel(BaseRewardModel):
             self.reward_single(prompt, completion, name) for completion in completions
         ]
 
-        bt.logging.trace(f"DirectPreferenceRewardModel | rewards: {rewards.tolist()}")
+        bt.logging.trace(
+            f"DirectPreferenceRewardModel | rewards: {[reward_event.reward.item() for reward_event in reward_events]}"
+        )
 
         return reward_events
