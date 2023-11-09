@@ -29,6 +29,8 @@ class RewardModelType(Enum):
     blacklist = "blacklist_filter"
     nsfw = "nsfw_filter"
     relevance = "relevance_filter"
+    relevance_bert = "relevance_bert"
+    relevance_mpnet = "relevance_mpnet"
     task_validator = "task_validator_filter"
     keyword_match = "keyword_match_penalty"
 

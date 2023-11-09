@@ -20,13 +20,22 @@ import re
 import torch
 import math
 from fuzzywuzzy import fuzz
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import BertTokenizer
+from dataclasses import dataclass
 
 
 # TODO: Use CLI arguments to set blacklist values: the most important being the boundary value and max_size
+
+
+@dataclass
+class BlacklistRewardEvent(BaseRewardEvent):
+    matched_ngram: str = None
+    significance_score: float = None
+
+
 class Blacklist(BaseRewardModel):
     @property
     def name(self) -> str:
@@ -263,7 +272,7 @@ class Blacklist(BaseRewardModel):
         }
         self._last_update = 0
 
-    def reward(self, prompt: str, completion: str, name: str) -> float:
+    def reward(self, prompt: str, completion: str, name: str) -> BlacklistRewardEvent:
         """Reward function for blacklist reward model. Returns 1 if completion contains an n-gram with significance above the boundary, 0 otherwise.
 
         Args:
@@ -275,8 +284,11 @@ class Blacklist(BaseRewardModel):
             float: Reward value {0,1}
         """
 
+        reward_event = BlacklistRewardEvent()
+
         if completion in prompt:
-            return 0.0
+            reward_event.reward = 0.0
+            return reward_event
 
         # Get significance scores
         scores = self.get_significance()
@@ -288,17 +300,22 @@ class Blacklist(BaseRewardModel):
                 and fuzz.partial_ratio(ngram, completion.lower())
                 > self.partial_ratio_boundary
             ):
-                return 0
+                reward_event.reward = 0
+                reward_event.matched_ngram = ngram
+                reward_event.significance_score = score
+                return reward_event
 
-        return 1
+        reward_event.reward = 1
+        return reward_event
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
-        return torch.tensor(
-            [self.reward(prompt, completion, name) for completion in completions],
-            dtype=torch.float32,
-        )
+    ) -> List[BlacklistRewardEvent]:
+        # Get all the reward results.
+        reward_events = [
+            self.reward(prompt, completion, name) for completion in completions
+        ]
+        return reward_events
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards
