@@ -220,7 +220,9 @@ class Blacklist(BaseRewardModel):
 
         self._last_update = self.num_completion
 
-        return dict(sorted(significance_scores.items(), key=lambda x: x[1], reverse=True))
+        return dict(
+            sorted(significance_scores.items(), key=lambda x: x[1], reverse=True)
+        )
 
     def get_significance(self) -> dict:
         """Get significance scores, only recalculating if the counter has been updated.
