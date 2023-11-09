@@ -241,11 +241,11 @@ async def forward(self):
 
     best_summary = summarization_event["best"]
     exclude = summarization_event["uids"]
-    prompt_context = "### SUMMARY CONTEXT:\n" + best_summary
+    best_summary_context = "### SUMMARY CONTEXT:\n" + best_summary
 
     for k in range(self.config.neuron.num_followup_steps):
         # Get a followup question, given the summarized context.
-        qg_task = create_qg_task(base_text=prompt_context, index=k)
+        qg_task = create_qg_task(base_text=best_summary_context, index=k)
         qg_event = await run_step(
             self,
             task=qg_task,
@@ -257,9 +257,11 @@ async def forward(self):
 
         # Adds the best question to the prompt context.
         best_question = qg_event["best"]
-        prompt_context += f"\n### QUESTION {k}:\n{best_question}"
+        best_question_prompt = (
+            best_summary_context + f"\n### QUESTION {k}:\n{best_question}"
+        )
 
-        qa_task = create_qa_task(prompt_context, index=k)
+        qa_task = create_qa_task(best_question_prompt, index=k)
         qa_event = await run_step(
             self,
             task=qa_task,
@@ -267,9 +269,6 @@ async def forward(self):
             timeout=self.config.neuron.answer_timeout,
             exclude=exclude,
         )
-
-        best_answer = qa_event["best"]
-        prompt_context += f"\n### ANSWER {k}:\n{best_answer}"
 
         exclude += qa_event["uids"]
 
