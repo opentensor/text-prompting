@@ -18,9 +18,9 @@
 
 import torch
 import bittensor as bt
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
@@ -51,15 +51,20 @@ class DirectPreferenceRewardModel(BaseRewardModel):
 
     def reward_single(
         self, prompt: str, completion: str, name: str, with_penalty=True
-    ) -> float:
+    ) -> BaseRewardEvent:
         r"""Calculates a direct preference optimization (DPO) style reward for a completion,
         which is a reference model's average log-probability for completion tokens given a prompt.
         Uses guidance from https://github.com/eric-mitchell/direct-preference-optimization/blob/main/trainers.py.
         """
+
+        reward_event = BaseRewardEvent()
+
         with torch.no_grad():
             # Check if completion is
             if completion.strip() == "" or len(completion) <= 5:
-                return -11  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+                # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+                reward_event.reward = -11.0
+                return reward_event
 
             # Tokenize the combined prompt + completion.
             combined = (
@@ -74,7 +79,8 @@ class DirectPreferenceRewardModel(BaseRewardModel):
 
             # Completion doesn't fit into model sequence, so return lowest reward.
             if self.tokenizer.model_max_length <= len(prompt_part):
-                return -11.0  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
+                reward_event.reward = -11.0
+                return reward_event
 
             # Truncate combined to fit into model max sequence length.
             if self.tokenizer.model_max_length < len(combined):
@@ -123,18 +129,19 @@ class DirectPreferenceRewardModel(BaseRewardModel):
 
             # NaNs can possibly arise through log(0)=-inf, replace with suitably small logits.
             if torch.isnan(reward) or torch.isinf(reward):
-                return -11.0  # exp(-11)=1.67e-5 < 2e-5=1/50257 (typical vocab size)
-            return reward.item()
+                reward_event.reward = 11
+
+            reward_event.reward = reward.item()
+            return reward_event
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
-        rewards = torch.tensor(
-            [
-                self.reward_single(prompt, completion, name)
-                for completion in completions
-            ],
-            dtype=torch.float32,
-        ).to(self.device)
+    ) -> List[BaseRewardEvent]:
+        # Get all the reward results.
+        reward_events = [
+            self.reward_single(prompt, completion, name) for completion in completions
+        ]
+
         bt.logging.trace(f"DirectPreferenceRewardModel | rewards: {rewards.tolist()}")
-        return rewards
+
+        return reward_events
