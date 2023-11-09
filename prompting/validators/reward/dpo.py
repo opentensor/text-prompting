@@ -143,7 +143,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
         ]
 
         bt.logging.trace(
-            f"DirectPreferenceRewardModel | rewards: {[reward_event.reward.item() for reward_event in reward_events]}"
+            f"DirectPreferenceRewardModel | rewards: {[reward_event.reward for reward_event in reward_events]}"
         )
 
         return reward_events
