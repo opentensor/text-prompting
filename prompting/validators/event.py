@@ -103,7 +103,6 @@ class EventSchema:
     relevance_filter_mpnet_score: Optional[
         List[float]
     ]  # Output vector of the relevance scoring reward model
-    task_validator_filter_normalized: Optional[List[float]]
     # TODO: Add comments
     task_validation_penalty_raw: Optional[List[float]]
     task_validation_penalty_adjusted: Optional[List[float]]

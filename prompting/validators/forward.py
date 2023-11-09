@@ -122,7 +122,7 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
         self.device
     )
     for weight_i, reward_fn_i in zip(self.reward_weights, self.reward_functions):
-        reward_i_normalized, reward_event = reward_fn_i.apply(prompt, responses, name)
+        reward_i_normalized, reward_event = reward_fn_i.apply(task.base_text, responses, task_name)
         rewards += weight_i * reward_i_normalized.to(self.device)
         if not self.config.neuron.disable_log_rewards:
             event = {**event, **reward_event}
@@ -130,7 +130,7 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
 
     for masking_fn_i in self.masking_functions:
         mask_i_normalized, reward_event = masking_fn_i.apply(
-            base_prompt, responses, name
+            task.base_text, responses, task_name
         )
         rewards *= mask_i_normalized.to(self.device)  # includes diversity
         if not self.config.neuron.disable_log_rewards:
@@ -273,6 +273,3 @@ async def forward(self):
         prompt_context += f"\n### ANSWER {k}:\n{best_answer}"
 
         exclude += qa_event["uids"]
-
-        self.blacklist.question_blacklist.append(qg_event["best"])
-        self.blacklist.answer_blacklist.append(qa_event["best"])

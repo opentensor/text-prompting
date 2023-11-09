@@ -155,6 +155,13 @@ class BaseRewardModel:
         ):
             filled_rewards[idx] = reward
             filled_rewards_normalized[idx] = reward_normalized
+        
+        # Fill every item of the reward_events
+        for name, reward_values in reward_events.items():        
+            filled_values = [None]*len(responses)
+            for idx, reward_value in zip(successful_completions_indices, reward_values):
+                filled_values[idx] = reward_value
+            reward_events[name] = filled_values 
 
         # Name each item of the reward event with the reward model name.
         reward_events = {f"{self.name}_{k}": v for k, v in reward_events.items()}
