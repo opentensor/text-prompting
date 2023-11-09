@@ -25,6 +25,9 @@ from prompting.validators.criteria import (
     TaskCriterion,
     MatchLengthCriteria,
     TextLengthUnitEnum,
+    ContentMatchTypeEnum,
+    SimpleResponseLayoutCriteria,
+    MatchContentCriteria,
 )
 
 
@@ -143,7 +146,51 @@ def create_summarization_task(base_text: str) -> SummaryTask:
 
 
 def create_qg_task(base_text: str, index: int) -> QuestionGenerationTask:
-    possible_criterias = [
+    questions_prefixes = [
+        "who",
+        "what",
+        "when",
+        "where",
+        "why",
+        "how",
+        "is",
+        "are",
+        "can",
+        "do",
+        "does",
+        "did",
+        "would",
+        "could",
+        "will",
+        "shall",
+        "may",
+        "might",
+        "am",
+        "was",
+        "were",
+        "has",
+        "have",
+        "had",
+        "been",
+        "being",
+    ]
+
+    question_starts_with_prefix_criteria = MatchContentCriteria(
+        contentMatchType=ContentMatchTypeEnum.STARTS_WITH,
+        penalty=0.25,
+        words_array=questions_prefixes,
+        n_words=3,
+    )
+
+    question_ends_with_criteria = MatchContentCriteria(
+        contentMatchType=ContentMatchTypeEnum.ENDS_WITH,
+        penalty=0.25,
+        words_array=["?"],
+        n_words=1,
+        text='Your response should end with a question mark, i.e. "?"',
+    )
+
+    other_random_criteria = [
         MatchLengthCriteria(
             penalty=0.1,
             target_length=random.randint(10, 40),
@@ -156,35 +203,47 @@ def create_qg_task(base_text: str, index: int) -> QuestionGenerationTask:
         ),
     ]
 
-    sampled_criterias = random.sample(possible_criterias, 1)
+    random_sampled_criteria = random.sample(other_random_criteria, 1)
+    criteria = [
+        question_starts_with_prefix_criteria,
+        question_ends_with_criteria,
+    ] + random_sampled_criteria
 
     return QuestionGenerationTask(
         base_text=base_text,
-        criteria=sampled_criterias,
+        criteria=criteria,
         task_type="question-generation",
         task_name=f"followup{index}",
     )
 
 
 def create_qa_task(base_text: str, index: int) -> QuestionAnswerTask:
-    possible_criterias = [
-        MatchLengthCriteria(
-            penalty=0.1,
-            target_length=random.randint(50, 200),
-            unit=TextLengthUnitEnum.WORDS,
-        ),
-        MatchLengthCriteria(
-            penalty=0.1,
-            target_length=random.randint(4, 8),
-            unit=TextLengthUnitEnum.SENTENCES,
-        ),
-    ]
+    answer_should_not_include_criteria = MatchContentCriteria(
+        words_array=["?"],
+        n_words=1,
+        penalty=0.2,
+        contentMatchType=ContentMatchTypeEnum.INCLUDES,
+        negate_match=True,
+        text="Your response should not include any question marks",
+    )
 
-    sampled_criterias = random.sample(possible_criterias, 1)
+    simple_response_layout_criteria = SimpleResponseLayoutCriteria(penalty=0.2)
+
+    words_criteria = MatchLengthCriteria(
+        penalty=0.2,
+        target_length=random.randint(50, 200),
+        unit=TextLengthUnitEnum.WORDS,
+    )
+
+    criteria = [
+        answer_should_not_include_criteria,
+        simple_response_layout_criteria,
+        words_criteria,
+    ]
 
     return QuestionAnswerTask(
         base_text=base_text,
-        criteria=sampled_criterias,
+        criteria=criteria,
         task_type="question-answer",
         task_name=f"answer{index}",
     )
