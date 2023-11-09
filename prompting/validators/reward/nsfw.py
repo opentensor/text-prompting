@@ -17,10 +17,16 @@
 # DEALINGS IN THE SOFTWARE.
 
 import torch
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from dataclasses import dataclass
+
+
+@dataclass
+class NSFWRewardEvent(BaseRewardEvent):
+    score: float = None
 
 
 class NSFWRewardModel(BaseRewardModel):
@@ -40,7 +46,9 @@ class NSFWRewardModel(BaseRewardModel):
             NSFWRewardModel.nsfw_filter_model_path
         ).to(self.device)
 
-    def reward(self, prompt: str, completion: str, name: str) -> float:
+    def reward(self, prompt: str, completion: str, name: str) -> NSFWRewardEvent:
+        reward_event = NSFWRewardEvent()
+
         boundary = -0.5
         with torch.no_grad():
             message = completion
@@ -63,15 +71,20 @@ class NSFWRewardModel(BaseRewardModel):
                 return max_score
 
             # 0 when needs to be filtered out, 1 when it is safe
-            return 0.0 if sum_nsfw_scores(input_ids, chunk_size=512) > boundary else 1.0
+            score = sum_nsfw_scores(input_ids, chunk_size=512)
+            reward_event.score = score
+            reward_event.reward = 0.0 if score > boundary else 1.0
+            return reward_event
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
-        return torch.tensor(
-            [self.reward(prompt, completion, name) for completion in completions],
-            dtype=torch.float32,
-        ).to(self.device)
+    ) -> List[NSFWRewardEvent]:
+        # Get all the reward results.
+        reward_events = [
+            self.reward(prompt, completion, name) for completion in completions
+        ]
+
+        return reward_events
 
     def normalize_rewards(self, rewards: torch.FloatTensor) -> torch.FloatTensor:
         return rewards

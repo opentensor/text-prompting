@@ -18,9 +18,9 @@
 
 import os
 import torch
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 
 
@@ -63,10 +63,14 @@ class DahoasRewardModel(BaseRewardModel):
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.PAD_ID = self.tokenizer(self.tokenizer.pad_token)["input_ids"][0]
 
-    def reward(self, prompt: str, completion: str, name: str) -> float:
+    def reward(self, prompt: str, completion: str, name: str) -> BaseRewardEvent:
+        reward_event = BaseRewardEvent()
+
         def reward_fn(samples):
             if samples is None:
-                return 0
+                reward_event.reward = 0
+                return reward_event
+
             scores_list = []
             batch_size = 1
             for i in range(0, len(samples), batch_size):
@@ -92,21 +96,24 @@ class DahoasRewardModel(BaseRewardModel):
                         attention_mask=attn_masks.to(self.device),
                     )
                 scores_list.append(sub_scores["chosen_end_scores"])
-            scores = torch.cat(scores_list, dim=0).mean().item()
-            return scores
+            score = torch.cat(scores_list, dim=0).mean().item()
+            return score
 
         with torch.no_grad():
             combined_reward = reward_fn(prompt + completion)
             independent_reward = reward_fn(completion)
-            return float((combined_reward - independent_reward).item())
+            reward_event.reward = float((combined_reward - independent_reward).item())
+            return reward_event
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
-        return torch.tensor(
-            [self.reward(prompt, completion, name) for completion in completions],
-            dtype=torch.float32,
-        ).to(self.device)
+    ) -> List[BaseRewardEvent]:
+        # Get all the reward results.
+        reward_events = [
+            self.reward(prompt, completion, name) for completion in completions
+        ]
+
+        return reward_events
 
     def forward(
         self,

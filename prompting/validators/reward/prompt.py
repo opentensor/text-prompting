@@ -19,9 +19,9 @@
 import time
 import torch
 import bittensor as bt
-from typing import List
+from typing import List, Union
 from .config import RewardModelType
-from .reward import BaseRewardModel
+from .reward import BaseRewardModel, BaseRewardEvent
 from prompting.validators.prompts import AugmentPrompt, FollowupPrompt, AnswerPrompt
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -50,7 +50,9 @@ class PromptRewardModel(BaseRewardModel):
             PromptRewardModel.reward_model_name, torch_dtype=torch.float16
         ).to(self.device)
 
-    def reward(self, prompt: str, completion: str, name: str) -> float:
+    def reward(self, prompt: str, completion: str, name: str) -> BaseRewardEvent:
+        reward_event = BaseRewardEvent()
+
         with torch.no_grad():
             # Choose correct scoring prompt for request type.
             if name == "augment":
@@ -60,7 +62,8 @@ class PromptRewardModel(BaseRewardModel):
             elif name == "answer":
                 scoring_prompt = AnswerPrompt()
             else:
-                return 0
+                reward_event.reward = 0
+                return reward_event
 
             # Format scoring prompt for this completion.
             scoring_prompt_text = scoring_prompt.text(prompt, completion)
@@ -96,18 +99,21 @@ class PromptRewardModel(BaseRewardModel):
             # Scale 0-10 score to 0-1 range.
             score /= 10.0
 
-            return score
+            reward_event.reward = score
+            return reward_event
 
     def get_rewards(
         self, prompt: str, completions: List[str], name: str
-    ) -> torch.FloatTensor:
+    ) -> List[BaseRewardEvent]:
         bt.logging.debug(
             f"PromptRewardModel | Calculating {len(completions)} rewards (typically < 1 sec/reward)."
         )
         bt.logging.trace(
             f"PromptRewardModel | prompt: {repr(prompt[:50])} ... {repr(prompt[-50:])}"
         )
-        return torch.tensor(
-            [self.reward(prompt, completion, name) for completion in completions],
-            dtype=torch.float32,
-        ).to(self.device)
+        # Get all the reward results.
+        reward_events = [
+            self.reward(prompt, completion, name) for completion in completions
+        ]
+
+        return reward_events
