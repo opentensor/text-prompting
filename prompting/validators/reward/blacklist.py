@@ -62,7 +62,7 @@ class Blacklist(BaseRewardModel):
             support (float, optional): The percentage of times that a phrase need to appear to get the phrase kept in counter. (support should be >> counter)
             error (float, optional): Error parameter for lossy sampling, should be as small as possible, further decreasing it further will increase memory usage. (support should be >> error )
             memory_lim (int, optional): Max number of counter entry to save for memory protection.
-            frequency_multiplier (float, optional): Multiplier for phrases frequency. Default to 100. 
+            frequency_multiplier (float, optional): Multiplier for phrases frequency. Default to 100.
         """
         super().__init__()
 
