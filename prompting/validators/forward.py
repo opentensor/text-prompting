@@ -96,44 +96,48 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
         timeout=timeout,
     )
 
+    # Update blacklist with completions so that n-gram filtering can be applied
+    self.blacklist.add(
+        [response.completion for response in responses if response.completion]
+    )
+
     # Restrict the format of acceptable followup completions.
     for response in responses:
         # remove leading and trailing periods
         completion = response.completion.strip(".")
 
         if "followup" in task_name and len(completion) > 0:
+            # take maximum of 40 words
+            max_words = 40
             if "?" in completion:
                 # take first question that is found and only use the sentence before the question mark
                 completion = completion.split("?")[0].split(".")[-1]
+                response.completion = " ".join(completion.split(" ")[-max_words:]) + "?"
             else:
                 # otherwise take the last sentence
                 completion = completion.split(".")[-1].split(".")[-1]
-
-            # take maximum of 40 words
-            response.completion = " ".join(completion.split(" ")[-40:]) + "?"
+                response.completion = " ".join(completion.split(" ")[-max_words:])
 
     # Compute the rewards for the responses given the prompt.
     rewards: torch.FloatTensor = torch.zeros(len(responses), dtype=torch.float32).to(
         self.device
     )
     for weight_i, reward_fn_i in zip(self.reward_weights, self.reward_functions):
-        reward_i, reward_i_normalized = reward_fn_i.apply(
+        reward_i_normalized, reward_event = reward_fn_i.apply(
             task.base_text, responses, task_name
         )
         rewards += weight_i * reward_i_normalized.to(self.device)
         if not self.config.neuron.disable_log_rewards:
-            event[reward_fn_i.name] = reward_i.tolist()
-            event[reward_fn_i.name + "_normalized"] = reward_i_normalized.tolist()
+            event = {**event, **reward_event}
         bt.logging.trace(str(reward_fn_i.name), reward_i_normalized.tolist())
 
     for masking_fn_i in self.masking_functions:
-        mask_i, mask_i_normalized = masking_fn_i.apply(
+        mask_i_normalized, reward_event = masking_fn_i.apply(
             task.base_text, responses, task_name
         )
         rewards *= mask_i_normalized.to(self.device)  # includes diversity
         if not self.config.neuron.disable_log_rewards:
-            event[masking_fn_i.name] = mask_i.tolist()
-            event[masking_fn_i.name + "_normalized"] = mask_i_normalized.tolist()
+            event = {**event, **reward_event}
         bt.logging.trace(str(masking_fn_i.name), mask_i_normalized.tolist())
 
     for penalty_fn_i in self.penalty_functions:
@@ -271,6 +275,3 @@ async def forward(self):
         )
 
         exclude += qa_event["uids"]
-
-        self.blacklist.question_blacklist.append(qg_event["best"])
-        self.blacklist.answer_blacklist.append(qa_event["best"])
