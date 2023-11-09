@@ -18,8 +18,24 @@
 
 import torch
 import bittensor as bt
-from typing import List
+from typing import List, Union
 from abc import abstractmethod
+from dataclasses import dataclass, asdict, fields
+
+
+@dataclass
+class BaseRewardEvent:
+    reward: float = 1.0
+    normalized_reward: float = None
+
+    @staticmethod
+    def parse_reward_events(reward_events):
+        field_names = [field.name for field in fields(reward_events[0])]
+        reward_events = [
+            asdict(reward_event).values() for reward_event in reward_events
+        ]
+        reward_event = dict(zip(field_names, list(zip(*reward_events))))
+        return reward_event
 
 
 class BaseRewardModel:
@@ -37,7 +53,7 @@ class BaseRewardModel:
     @abstractmethod
     def get_rewards(
         self, prompt: str, completion: List[str], name: str
-    ) -> torch.FloatTensor:
+    ) -> Union[torch.FloatTensor, dict]:
         ...
 
     def __init__(self) -> None:
@@ -101,7 +117,7 @@ class BaseRewardModel:
 
     def apply(
         self, prompt: str, responses: List[bt.Synapse], name: str
-    ) -> torch.FloatTensor:
+    ) -> Union[torch.FloatTensor, dict]:
         """Applies the reward model across each call. Unsuccessful responses are zeroed."""
         # Get indices of correctly responding calls.
 
@@ -117,7 +133,12 @@ class BaseRewardModel:
         ]
 
         # Reward each completion.
-        successful_rewards = self.get_rewards(prompt, successful_completions, name)
+        reward_events = BaseRewardEvent.parse_reward_events(
+            self.get_rewards(prompt, successful_completions, name)
+        )
+        successful_rewards = torch.tensor(
+            reward_events.pop("reward"), dtype=torch.float32
+        )
 
         # Softmax rewards across samples.
         successful_rewards_normalized = self.normalize_rewards(successful_rewards)
@@ -135,5 +156,17 @@ class BaseRewardModel:
             filled_rewards[idx] = reward
             filled_rewards_normalized[idx] = reward_normalized
 
+        # Fill every item of the reward_events
+        for name, reward_values in reward_events.items():
+            filled_values = [None] * len(responses)
+            for idx, reward_value in zip(successful_completions_indices, reward_values):
+                filled_values[idx] = reward_value
+            reward_events[name] = filled_values
+
+        # Name each item of the reward event with the reward model name.
+        reward_events = {f"{self.name}_{k}": v for k, v in reward_events.items()}
+        reward_events[self.name] = filled_rewards.tolist()
+        reward_events[self.name + "_normalized"] = filled_rewards_normalized.tolist()
+
         # Return the filled rewards.
-        return filled_rewards, filled_rewards_normalized
+        return filled_rewards_normalized, reward_events
