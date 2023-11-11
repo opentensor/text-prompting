@@ -292,21 +292,6 @@ class Blacklist(BaseRewardModel):
             reward_event.reward = 0.0
             return reward_event
 
-        # Get significance scores
-        scores = self.get_significance()
-
-        # Check if any n-grams have significance above the boundary
-        for ngram, score in scores.items():
-            if (
-                score > self.boundary
-                and fuzz.partial_ratio(ngram, completion.lower())
-                > self.partial_ratio_boundary
-            ):
-                reward_event.reward = 0
-                reward_event.matched_ngram = ngram
-                reward_event.significance_score = score
-                return reward_event
-
         reward_event.reward = 1
         return reward_event
 
