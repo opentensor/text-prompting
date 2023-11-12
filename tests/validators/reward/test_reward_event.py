@@ -22,10 +22,10 @@ import prompting.validators.reward as reward
 
 class TaskValidatorTestCase(unittest.TestCase):
     """
-    This class contains unit tests for the TaskValidator class.
+    This class contains unit tests for the RewardEvent classes.
 
-    The tests cover different scenarios for the `reward` method of the TaskValidator class.
-    The `reward` method is expected to return a reward based on the task name and the completion text.
+    The tests cover different scenarios where completions may or may not be successful and the reward events are checked that they don't contain missing values.
+    The `reward` attribute of all RewardEvents is expected to be a float, and the `is_filter_model` attribute is expected to be a boolean.
     """
 
     def setUp(self):
