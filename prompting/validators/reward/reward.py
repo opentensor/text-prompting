@@ -40,9 +40,12 @@ class BaseRewardEvent:
                 value = getattr(event, field.name)
 
                 # Ensure that the reward is not None.
-                if field.name == 'reward' and value is None:
-                    bt.logging.trace(f"Reward for {event.__class__.__name__} index {i} is None, setting to {event.is_filter_model}")
-                    value = 1 if event.is_filter_model else 0
+                if field.name == 'reward':
+                    if value is None:
+                        bt.logging.trace(f"Reward for {event.__class__.__name__} index {i} is None, setting to {event.is_filter_model}")
+                        value = 1 if event.is_filter_model else 0
+                    else:
+                        value = float(value)
 
                 reward_event[field.name] = value
             parsed_events.append(reward_event)
