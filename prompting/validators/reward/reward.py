@@ -25,17 +25,29 @@ from dataclasses import dataclass, asdict, fields
 
 @dataclass
 class BaseRewardEvent:
-    reward: float = 1.0
+    reward: float = None
     normalized_reward: float = None
+    is_filter_model: bool = False
 
     @staticmethod
-    def parse_reward_events(reward_events):
-        field_names = [field.name for field in fields(reward_events[0])]
-        reward_events = [
-            asdict(reward_event).values() for reward_event in reward_events
-        ]
-        reward_event = dict(zip(field_names, list(zip(*reward_events))))
-        return reward_event
+    def parse_reward_events(reward_events) -> List[dict]:
+        """Parse each reward event and ensure that values are not None."""
+
+        parsed_events = []
+        for i, event in enumerate(reward_events):
+            reward_event = {}
+            for field in fields(event):
+                value = getattr(event, field.name)
+
+                # Ensure that the reward is not None.
+                if field.name == 'reward' and value is None:
+                    bt.logging.trace(f"Reward for {event.__class__.__name__} index {i} is None, setting to {event.is_filter_model}")
+                    value = 1 if event.is_filter_model else 0
+
+                reward_event[field.name] = value
+            parsed_events.append(reward_event)
+
+        return parsed_events
 
 
 class BaseRewardModel:

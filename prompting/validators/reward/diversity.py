@@ -52,6 +52,7 @@ def mean_pooling(model_output, attention_mask):
 class DiversityRewardEvent(BaseRewardEvent):
     historic: float = None
     batch: float = None
+    is_filter_model: bool = True
 
 
 class DiversityRewardModel(BaseRewardModel):

@@ -32,8 +32,7 @@ from dataclasses import dataclass
 
 @dataclass
 class BlacklistRewardEvent(BaseRewardEvent):
-    matched_ngram: str = None
-    significance_score: float = None
+    is_filter_model: bool = True
 
 
 class Blacklist(BaseRewardModel):

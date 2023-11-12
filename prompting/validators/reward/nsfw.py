@@ -27,6 +27,7 @@ from dataclasses import dataclass
 @dataclass
 class NSFWRewardEvent(BaseRewardEvent):
     score: float = None
+    is_filter_model: bool = True
 
 
 class NSFWRewardModel(BaseRewardModel):
