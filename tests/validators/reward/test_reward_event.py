@@ -67,7 +67,7 @@ class RewardEventTestCase(unittest.TestCase):
             parsed = reward.reward.BaseRewardEvent.parse_reward_events(events)
 
             # Ensure that all rewards are not None
-            self.assertTrue(all(ev['reward'] is not None for ev in parsed), f'Events for {name} are missing rewards')
+            self.assertTrue(all(r is not None for r in parsed['reward']), f'Events for {name} are missing rewards')
 
 
     def test_imputed_reward_values_are_correct(self):
@@ -80,4 +80,4 @@ class RewardEventTestCase(unittest.TestCase):
             parsed = reward.reward.BaseRewardEvent.parse_reward_events(events)
 
             # Ensure that all rewards are not None
-            self.assertTrue(all(parsed[i]['reward']==expected_value for i in indices_missing_reward), f'Events for {name} were imputed with incorrect reward value')
+            self.assertTrue(all(parsed['reward'][i]==expected_value for i in indices_missing_reward), f'Events for {name} were imputed with incorrect reward value')

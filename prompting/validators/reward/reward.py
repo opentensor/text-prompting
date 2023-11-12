@@ -33,9 +33,8 @@ class BaseRewardEvent:
     def parse_reward_events(reward_events) -> List[dict]:
         """Parse each reward event and ensure that values are not None."""
 
-        parsed_events = []
+        parsed_events = {f.name: [] for f in fields(reward_events[0])}
         for i, event in enumerate(reward_events):
-            reward_event = {}
             for field in fields(event):
                 value = getattr(event, field.name)
 
@@ -47,8 +46,7 @@ class BaseRewardEvent:
                         bt.logging.trace(f"Reward for {event.__class__.__name__} index {i} is {value}, setting to {event.is_filter_model}")
                         value = 1 if event.is_filter_model else 0
 
-                reward_event[field.name] = value
-            parsed_events.append(reward_event)
+                parsed_events[field.name].append(value)
 
         return parsed_events
 
