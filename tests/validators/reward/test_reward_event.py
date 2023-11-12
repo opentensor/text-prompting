@@ -20,7 +20,7 @@ import unittest
 from dataclasses import fields
 import prompting.validators.reward as reward
 
-class TaskValidatorTestCase(unittest.TestCase):
+class RewardEventTestCase(unittest.TestCase):
     """
     This class contains unit tests for the RewardEvent classes.
 
