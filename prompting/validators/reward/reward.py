@@ -26,8 +26,7 @@ from dataclasses import dataclass, asdict, fields
 @dataclass
 class BaseRewardEvent:
     reward: float = 1.0
-    normalized_reward: float = None
-    is_filter_model: bool = False
+    normalized_reward: float = None    
 
     @staticmethod
     def parse_reward_events(reward_events) -> List[dict]:
