@@ -25,27 +25,18 @@ from dataclasses import dataclass, asdict, fields
 
 @dataclass
 class BaseRewardEvent:
-    reward: float = None
+    reward: float = 1.0
     normalized_reward: float = None
     is_filter_model: bool = False
 
     @staticmethod
     def parse_reward_events(reward_events) -> List[dict]:
-        """Parse each reward event and ensure that values are not None."""
-
-        parsed_events = {f.name: [] for f in fields(reward_events[0])}
-        for i, event in enumerate(reward_events):
-            for field in fields(event):
-                value = getattr(event, field.name)
-
-                # Ensure that the reward is not None.
-                if field.name == 'reward' and value in (None, torch.nan, torch.inf):
-                    bt.logging.warning(f"Reward for {event.__class__.__name__} index {i} is {value}, setting to {event.is_filter_model}")
-                    value = 1 if event.is_filter_model else 0
-
-                parsed_events[field.name].append(value)
-
-        return parsed_events
+        field_names = [field.name for field in fields(reward_events[0])]
+        reward_events = [
+            asdict(reward_event).values() for reward_event in reward_events
+        ]
+        reward_event = dict(zip(field_names, list(zip(*reward_events))))
+        return reward_event        
 
 
 class BaseRewardModel:
@@ -181,7 +172,7 @@ class BaseRewardModel:
         # Warns unexpected behavior for rewards
         if torch.isnan(filled_rewards_normalized).any():
             bt.logging.warning(f"The tensor from {self.name} contains NaN values: {filled_rewards_normalized}")
-            
+            filled_rewards_normalized.nan_to_num_(nan=0.0)            
 
         # Return the filled rewards.
         return filled_rewards_normalized, reward_events
