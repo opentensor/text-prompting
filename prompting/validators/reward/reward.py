@@ -26,7 +26,7 @@ from dataclasses import dataclass, asdict, fields
 @dataclass
 class BaseRewardEvent:
     reward: float = 1.0
-    normalized_reward: float = None    
+    normalized_reward: float = None
 
     @staticmethod
     def parse_reward_events(reward_events) -> List[dict]:
@@ -35,7 +35,7 @@ class BaseRewardEvent:
             asdict(reward_event).values() for reward_event in reward_events
         ]
         reward_event = dict(zip(field_names, list(zip(*reward_events))))
-        return reward_event        
+        return reward_event 
 
 
 class BaseRewardModel:
