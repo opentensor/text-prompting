@@ -29,13 +29,13 @@ class BaseRewardEvent:
     normalized_reward: float = None
 
     @staticmethod
-    def parse_reward_events(reward_events) -> List[dict]:
+    def parse_reward_events(reward_events):
         field_names = [field.name for field in fields(reward_events[0])]
         reward_events = [
             asdict(reward_event).values() for reward_event in reward_events
         ]
         reward_event = dict(zip(field_names, list(zip(*reward_events))))
-        return reward_event 
+        return reward_event
 
 
 class BaseRewardModel:
