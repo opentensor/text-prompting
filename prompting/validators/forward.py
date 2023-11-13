@@ -126,6 +126,8 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
         reward_i_normalized, reward_event = reward_fn_i.apply(
             task.base_text, responses, task_name
         )
+        import pdb;
+        pdb.set_trace()
         rewards += weight_i * reward_i_normalized.to(self.device)
         if not self.config.neuron.disable_log_rewards:
             event = {**event, **reward_event}
