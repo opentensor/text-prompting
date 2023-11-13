@@ -39,12 +39,9 @@ class BaseRewardEvent:
                 value = getattr(event, field.name)
 
                 # Ensure that the reward is not None.
-                if field.name == 'reward':
-                    try:
-                        value = float(value)
-                    except:
-                        bt.logging.trace(f"Reward for {event.__class__.__name__} index {i} is {value}, setting to {event.is_filter_model}")
-                        value = 1 if event.is_filter_model else 0
+                if field.name == 'reward' and value in (None, torch.nan, torch.inf):
+                    bt.logging.warning(f"Reward for {event.__class__.__name__} index {i} is {value}, setting to {event.is_filter_model}")
+                    value = 1 if event.is_filter_model else 0
 
                 parsed_events[field.name].append(value)
 
