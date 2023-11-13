@@ -51,8 +51,7 @@ def mean_pooling(model_output, attention_mask):
 @dataclass
 class RelevanceRewardEvent(BaseRewardEvent):
     bert_score: float = None
-    mpnet_score: float = None
-    is_filter_model: bool = True
+    mpnet_score: float = None    
 
 
 class RelevanceRewardModel(BaseRewardModel):
