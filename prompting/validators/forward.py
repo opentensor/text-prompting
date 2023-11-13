@@ -126,8 +126,6 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
         reward_i_normalized, reward_event = reward_fn_i.apply(
             task.base_text, responses, task_name
         )
-        import pdb;
-        pdb.set_trace()
         rewards += weight_i * reward_i_normalized.to(self.device)
         if not self.config.neuron.disable_log_rewards:
             event = {**event, **reward_event}
@@ -161,6 +159,8 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
         scores=gating_scores[uids], rewards=rewards
     )
 
+    import pdb
+    pdb.set_trace()
     # Find the best completion given the rewards vector.
     completions: List[str] = [comp.completion for comp in responses]
     completion_status_message: List[str] = [
