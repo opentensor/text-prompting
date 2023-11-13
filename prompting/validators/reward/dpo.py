@@ -129,7 +129,7 @@ class DirectPreferenceRewardModel(BaseRewardModel):
 
             # NaNs can possibly arise through log(0)=-inf, replace with suitably small logits.
             if torch.isnan(reward) or torch.isinf(reward):
-                reward_event.reward = 11
+                reward = torch.tensor(-11)
 
             reward_event.reward = reward.item()
             return reward_event
