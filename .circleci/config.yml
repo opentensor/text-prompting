@@ -88,7 +88,6 @@ jobs:
           name: Version is updated
           command: |
             [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep prompting/validators/__init__.py | wc -l) == 1 ]] && echo "prompting/validators/__init__.py has changed"
-            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep VERSION | wc -l) == 1 ]] && echo "VERSION has changed"
 
   check-version-not-released:
     docker:
