@@ -168,5 +168,12 @@ class BaseRewardModel:
         reward_events[self.name] = filled_rewards.tolist()
         reward_events[self.name + "_normalized"] = filled_rewards_normalized.tolist()
 
+        # Warns unexpected behavior for rewards
+        if torch.isnan(filled_rewards_normalized).any():
+            bt.logging.warning(
+                f"The tensor from {self.name} contains NaN values: {filled_rewards_normalized}"
+            )
+            filled_rewards_normalized.nan_to_num_(nan=0.0)
+
         # Return the filled rewards.
         return filled_rewards_normalized, reward_events

@@ -232,9 +232,6 @@ async def forward(self):
     # Create a summary task from the context.
     summary_task: Task = create_summarization_task(base_text)
 
-    # Reset Blacklist reward model
-    self.blacklist.reset()
-
     # Request a summary, given the original context.
     summarization_event = await run_step(
         self,
