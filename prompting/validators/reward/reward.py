@@ -30,7 +30,7 @@ class BaseRewardEvent:
 
     @staticmethod
     def parse_reward_events(reward_events):
-        if reward_events == None or len(reward_events) == 0 :
+        if reward_events == None or len(reward_events) == 0:
             field_names = [field.name for field in fields(BaseRewardEvent())]
             empty_reward_event = dict(zip(field_names, [[]] * len(field_names)))
             return empty_reward_event
