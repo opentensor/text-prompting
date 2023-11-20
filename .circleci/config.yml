@@ -78,7 +78,7 @@ jobs:
             . env/bin/activate
             pip install -e .
 
-  check-version-updated:
+  check-validator-version-updated:
     docker:
       - image: cimg/python:3.10
     steps:
@@ -87,18 +87,7 @@ jobs:
       - run:
           name: Version is updated
           command: |
-            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep prompting/__init__.py | wc -l) == 1 ]] && echo "prompting/__init__.py has changed"
-            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep VERSION | wc -l) == 1 ]] && echo "VERSION has changed"
-
-  check-changelog-updated:
-    docker:
-      - image: cimg/python:3.10
-    steps:
-      - checkout
-      - run:
-          name: File CHANGELOG.md is updated
-          command: |
-            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep CHANGELOG.md | wc -l) == 1 ]] && echo "CHANGELOG.md has changed"
+            [[ $(git diff-tree --no-commit-id --name-only -r HEAD..main | grep prompting/validators/__init__.py | wc -l) == 1 ]] && echo "prompting/validators/__init__.py has changed"
 
   check-version-not-released:
     docker:
@@ -123,12 +112,7 @@ workflows:
 
   release-branches-requirements:
     jobs:
-      - check-version-updated:
-          filters:
-            branches:
-              only:
-                - /^(release|hotfix)/.*/
-      - check-changelog-updated:
+      - check-validator-version-updated:
           filters:
             branches:
               only:

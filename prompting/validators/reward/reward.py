@@ -30,6 +30,11 @@ class BaseRewardEvent:
 
     @staticmethod
     def parse_reward_events(reward_events):
+        if reward_events == None or len(reward_events) == 0:
+            field_names = [field.name for field in fields(BaseRewardEvent())]
+            empty_reward_event = dict(zip(field_names, [[]] * len(field_names)))
+            return empty_reward_event
+
         field_names = [field.name for field in fields(reward_events[0])]
         reward_events = [
             asdict(reward_event).values() for reward_event in reward_events
@@ -167,11 +172,13 @@ class BaseRewardModel:
         reward_events = {f"{self.name}_{k}": v for k, v in reward_events.items()}
         reward_events[self.name] = filled_rewards.tolist()
         reward_events[self.name + "_normalized"] = filled_rewards_normalized.tolist()
-        
+
         # Warns unexpected behavior for rewards
         if torch.isnan(filled_rewards_normalized).any():
-            bt.logging.warning(f"The tensor from {self.name} contains NaN values: {filled_rewards_normalized}")
-            filled_rewards_normalized.nan_to_num_(nan=0.0)            
+            bt.logging.warning(
+                f"The tensor from {self.name} contains NaN values: {filled_rewards_normalized}"
+            )
+            filled_rewards_normalized.nan_to_num_(nan=0.0)
 
         # Return the filled rewards.
         return filled_rewards_normalized, reward_events

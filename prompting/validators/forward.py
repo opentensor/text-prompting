@@ -230,7 +230,7 @@ async def forward(self):
     base_text = ".".join(data.split(".", maxsplit=random_cutoff)[:-1])
 
     # Create a summary task from the context.
-    summary_task: Task = create_summarization_task(base_text)    
+    summary_task: Task = create_summarization_task(base_text)
 
     # Request a summary, given the original context.
     summarization_event = await run_step(
