@@ -164,7 +164,7 @@ class DiversityRewardModel(BaseRewardModel):
     ) -> List[DiversityRewardEvent]:
         # Check if completions are empty, return 0 if so
         if len(completions) == 0:
-            return torch.tensor([]).to(self.device), None
+            return torch.tensor([]).to(self.device)
 
         # Get embeddings for all completions.
         embeddings = self.get_embeddings(completions)
