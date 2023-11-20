@@ -27,7 +27,7 @@ from . import weights
 from . import event
 from . import dataset
 
-__version__ = "2.1.3"
+__version__ = "2.1.4"
 version_split = __version__.split(".")
 __spec_version__ = (
     (1000 * int(version_split[0]))
