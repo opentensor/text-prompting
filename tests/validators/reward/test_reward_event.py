@@ -72,7 +72,7 @@ class RewardEventTestCase(unittest.TestCase):
 
     def test_imputed_reward_values_are_correct(self):
         for name, events in self.reward_events.items():
-            expected_value = 1 if events[0].is_filter_model else 0
+            expected_value = 1
             indices_missing_reward = [
                 i for i, ev in enumerate(events) if ev.reward is None
             ]
@@ -87,3 +87,32 @@ class RewardEventTestCase(unittest.TestCase):
                 ),
                 f"Events for {name} were imputed with incorrect reward value",
             )
+
+    def test_parse_reward_events_with_reward_events(self):
+        # Create sample reward events
+        event1 = reward.reward.BaseRewardEvent(reward=1, normalized_reward="event1")
+        event2 = reward.reward.BaseRewardEvent(reward=2, normalized_reward="event2")
+        events = [event1, event2]
+
+        # Expected result
+        expected = {
+            'reward': (1, 2),
+            'normalized_reward': ('event1', 'event2')
+        }
+
+        # Call the function and check if the result matches the expected output        
+        result = reward.reward.BaseRewardEvent.parse_reward_events(events)        
+        self.assertEqual(result, expected)
+
+
+    def test_parse_reward_events_with_no_reward_events(self):
+        # Test with None
+        result_none = reward.reward.BaseRewardEvent.parse_reward_events(None)
+        self.assertTrue(all(len(lst) == 0 for lst in result_none.values()))
+        self.assertEqual(result_none, {'reward': [], 'normalized_reward': []})
+
+        # Test with empty list
+        result_empty = reward.reward.BaseRewardEvent.parse_reward_events([])
+        self.assertTrue(all(len(lst) == 0 for lst in result_empty.values()))
+        self.assertEqual(result_empty, {'reward': [], 'normalized_reward': []})
+
