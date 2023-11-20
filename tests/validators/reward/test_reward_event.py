@@ -95,24 +95,19 @@ class RewardEventTestCase(unittest.TestCase):
         events = [event1, event2]
 
         # Expected result
-        expected = {
-            'reward': (1, 2),
-            'normalized_reward': ('event1', 'event2')
-        }
+        expected = {"reward": (1, 2), "normalized_reward": ("event1", "event2")}
 
-        # Call the function and check if the result matches the expected output        
-        result = reward.reward.BaseRewardEvent.parse_reward_events(events)        
+        # Call the function and check if the result matches the expected output
+        result = reward.reward.BaseRewardEvent.parse_reward_events(events)
         self.assertEqual(result, expected)
-
 
     def test_parse_reward_events_with_no_reward_events(self):
         # Test with None
         result_none = reward.reward.BaseRewardEvent.parse_reward_events(None)
         self.assertTrue(all(len(lst) == 0 for lst in result_none.values()))
-        self.assertEqual(result_none, {'reward': [], 'normalized_reward': []})
+        self.assertEqual(result_none, {"reward": [], "normalized_reward": []})
 
         # Test with empty list
         result_empty = reward.reward.BaseRewardEvent.parse_reward_events([])
         self.assertTrue(all(len(lst) == 0 for lst in result_empty.values()))
-        self.assertEqual(result_empty, {'reward': [], 'normalized_reward': []})
-
+        self.assertEqual(result_empty, {"reward": [], "normalized_reward": []})
