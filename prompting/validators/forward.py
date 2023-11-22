@@ -221,7 +221,7 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
     return event
 
 
-async def forward(self):
+async def questions_and_answers_around_summary_flow():
     # Obtain a unique context from the dataset.
     data = next(self.dataset)["text"]
 
@@ -272,3 +272,9 @@ async def forward(self):
         )
 
         exclude += qa_event["uids"]
+
+
+
+async def forward(self):
+    # Definition of flow to be executed at forward step
+    await questions_and_answers_around_summary_flow()
