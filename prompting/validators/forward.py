@@ -276,4 +276,4 @@ async def questions_and_answers_around_summary_flow(self):
 
 async def forward(self):
     # Definition of flow to be executed at forward step
-    await questions_and_answers_around_summary_flow()
+    await questions_and_answers_around_summary_flow(self)
