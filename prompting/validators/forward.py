@@ -221,7 +221,7 @@ async def run_step(self, task: Task, k: int, timeout: float, exclude: list = [])
     return event
 
 
-async def questions_and_answers_around_summary_flow():
+async def questions_and_answers_around_summary_flow(self):
     # Obtain a unique context from the dataset.
     data = next(self.dataset)["text"]
 
