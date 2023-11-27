@@ -302,7 +302,7 @@ class Blacklist(BaseRewardModel):
                 and fuzz.partial_ratio(ngram, completion.lower())
                 > self.partial_ratio_boundary
             ):
-                reward_event.reward = 1
+                reward_event.reward = 0
                 reward_event.matched_ngram = ngram
                 reward_event.significance_score = score
                 return reward_event
