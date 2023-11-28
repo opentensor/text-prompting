@@ -260,16 +260,16 @@ def create_qa_task(base_text: str, index: int) -> QuestionAnswerTask:
     answer_should_not_include_criteria = MatchContentCriteria(
         words_array=["?"],
         n_words=1,
-        penalty=0.2,
+        penalty=0.25,
         contentMatchType=ContentMatchTypeEnum.INCLUDES,
         negate_match=True,
         text="Your response should not include any question marks",
     )
 
-    simple_response_layout_criteria = SimpleResponseLayoutCriteria(penalty=0.2)
+    simple_response_layout_criteria = SimpleResponseLayoutCriteria(penalty=0.25)
 
     words_criteria = MatchLengthCriteria(
-        penalty=0.2,
+        penalty=0.25,
         target_length=random.randint(50, 200),
         unit=TextLengthUnitEnum.WORDS,
     )
