@@ -29,7 +29,7 @@ from prompting.validators.criteria import (
     SimpleResponseLayoutCriteria,
     MatchContentCriteria,
     MatchLayoutCriteria,
-    LayoutMatchTypeEnum
+    LayoutMatchTypeEnum,
 )
 
 
@@ -126,12 +126,12 @@ class QuestionAnswerTask(Task):
 def create_summarization_task(base_text: str) -> SummaryTask:
     # scope 1: bullet points, scope 2: numbered list, scope 3: simple layout
     scope = random.randint(1, 3)
-    
+
     select_bullet_point_layout = scope == 1
     select_numbered_list_layout = scope == 2
 
     # scope 1 or 2: define criteria set for bullet points or numbered list
-    if select_bullet_point_layout or select_numbered_list_layout:                
+    if select_bullet_point_layout or select_numbered_list_layout:
         if select_bullet_point_layout:
             layout_criteria = MatchLayoutCriteria(
                 layout_type=LayoutMatchTypeEnum.UNORDERED_LIST,
@@ -141,7 +141,7 @@ def create_summarization_task(base_text: str) -> SummaryTask:
         else:
             layout_criteria = MatchLayoutCriteria(
                 layout_type=LayoutMatchTypeEnum.NUMBERED_LIST,
-                penalty=0.5,                
+                penalty=0.5,
             )
 
         possible_other_criterion = [
@@ -155,7 +155,7 @@ def create_summarization_task(base_text: str) -> SummaryTask:
                 target_length=random.randint(8, 12),
                 unit=TextLengthUnitEnum.SENTENCES,
             ),
-        ]    
+        ]
     # scope 3: define criteria set for simple layout
     else:
         layout_criteria = SimpleResponseLayoutCriteria(penalty=0.5)
@@ -182,7 +182,7 @@ def create_summarization_task(base_text: str) -> SummaryTask:
         task_type="summarization",
         task_name="augment",
     )
-  
+
 
 def create_qg_task(base_text: str, index: int) -> QuestionGenerationTask:
     questions_prefixes = [
