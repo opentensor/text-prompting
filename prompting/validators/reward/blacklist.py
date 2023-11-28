@@ -43,7 +43,7 @@ class Blacklist(BaseRewardModel):
 
     def __init__(
         self,
-        boundary: float = 6,
+        boundary: float = 10,
         n_min: int = 5,
         n_max: int = 14,
         word_limit: int = 2000,
@@ -213,7 +213,7 @@ class Blacklist(BaseRewardModel):
                 if len(decoded_ngram.split()) >= self.n_min:
                     # calculate significance score for ngram
                     significance_scores[decoded_ngram] = (
-                        self.A ** (len(decoded_ngram) - 1)
+                        self.A ** (len(decoded_ngram.split()) - 1)
                         * ((count[0] + count[1]) / self.num_completion)
                         * self.frequency_multiplier
                     )
