@@ -194,7 +194,7 @@ class neuron:
                 MockRewardModel(RewardModelType.nsfw.value),
             ]
             self.penalty_functions = [
-                TaskValidationPenaltyModel(max_penalty=0.6),
+                TaskValidationPenaltyModel(max_penalty=0.75),
                 ContentMatchPenaltyModel(max_penalty=0.2),
                 KeywordMatchPenaltyModel(max_penalty=1),
             ]
