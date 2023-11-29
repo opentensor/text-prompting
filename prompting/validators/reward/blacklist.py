@@ -43,9 +43,9 @@ class Blacklist(BaseRewardModel):
 
     def __init__(
         self,
-        boundary: float = 10,
+        boundary: float = 40,
         n_min: int = 5,
-        n_max: int = 14,
+        n_max: int = 10,
         word_limit: int = 2000,
         A: float = 1.3,
         preprocess: str = "[^(\\w|\\s)]",
@@ -205,6 +205,7 @@ class Blacklist(BaseRewardModel):
         """
 
         significance_scores = {}
+
         for ngram, count in self.counter.items():
             if count[0] + count[1] > max(
                 self.support * self.num_completion, self.w_current + 1
