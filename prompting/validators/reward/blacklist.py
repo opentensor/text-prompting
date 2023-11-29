@@ -205,7 +205,6 @@ class Blacklist(BaseRewardModel):
         """
 
         significance_scores = {}
-
         for ngram, count in self.counter.items():
             if count[0] + count[1] > max(
                 self.support * self.num_completion, self.w_current + 1
