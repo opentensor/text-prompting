@@ -28,6 +28,8 @@ from prompting.validators.criteria import (
     ContentMatchTypeEnum,
     SimpleResponseLayoutCriteria,
     MatchContentCriteria,
+    MatchLayoutCriteria,
+    LayoutMatchTypeEnum,
 )
 
 
@@ -122,24 +124,61 @@ class QuestionAnswerTask(Task):
 
 
 def create_summarization_task(base_text: str) -> SummaryTask:
-    possible_criterias = [
-        MatchLengthCriteria(
-            penalty=0.1,
-            target_length=random.randint(50, 200),
-            unit=TextLengthUnitEnum.WORDS,
-        ),
-        MatchLengthCriteria(
-            penalty=0.1,
-            target_length=random.randint(4, 8),
-            unit=TextLengthUnitEnum.SENTENCES,
-        ),
-    ]
+    # scope 1: bullet points, scope 2: numbered list, scope 3: simple layout
+    scope = random.randint(1, 3)
 
-    sampled_criterias = random.sample(possible_criterias, 1)
+    select_bullet_point_layout = scope == 1
+    select_numbered_list_layout = scope == 2
+
+    # scope 1 or 2: define criteria set for bullet points or numbered list
+    if select_bullet_point_layout or select_numbered_list_layout:
+        if select_bullet_point_layout:
+            layout_criteria = MatchLayoutCriteria(
+                layout_type=LayoutMatchTypeEnum.UNORDERED_LIST,
+                penalty=0.5,
+                text="Your response should be ordered in format of bullet points.",
+            )
+        else:
+            layout_criteria = MatchLayoutCriteria(
+                layout_type=LayoutMatchTypeEnum.NUMBERED_LIST,
+                penalty=0.5,
+            )
+
+        possible_other_criterion = [
+            MatchLengthCriteria(
+                penalty=0.25,
+                target_length=random.randint(100, 200),
+                unit=TextLengthUnitEnum.WORDS,
+            ),
+            MatchLengthCriteria(
+                penalty=0.25,
+                target_length=random.randint(8, 12),
+                unit=TextLengthUnitEnum.SENTENCES,
+            ),
+        ]
+    # scope 3: define criteria set for simple layout
+    else:
+        layout_criteria = SimpleResponseLayoutCriteria(penalty=0.5)
+
+        possible_other_criterion = [
+            MatchLengthCriteria(
+                penalty=0.25,
+                target_length=random.randint(50, 200),
+                unit=TextLengthUnitEnum.WORDS,
+            ),
+            MatchLengthCriteria(
+                penalty=0.25,
+                target_length=random.randint(4, 8),
+                unit=TextLengthUnitEnum.SENTENCES,
+            ),
+        ]
+
+    random_sampled_criterion = random.sample(possible_other_criterion, 1)
+    defined_criteria = [layout_criteria] + random_sampled_criterion
 
     return SummaryTask(
         base_text=base_text,
-        criteria=sampled_criterias,
+        criteria=defined_criteria,
         task_type="summarization",
         task_name="augment",
     )
@@ -192,12 +231,12 @@ def create_qg_task(base_text: str, index: int) -> QuestionGenerationTask:
 
     other_random_criteria = [
         MatchLengthCriteria(
-            penalty=0.1,
+            penalty=0.25,
             target_length=random.randint(10, 40),
             unit=TextLengthUnitEnum.WORDS,
         ),
         MatchLengthCriteria(
-            penalty=0.1,
+            penalty=0.25,
             target_length=random.randint(40, 150),
             unit=TextLengthUnitEnum.CHARACTERS,
         ),
@@ -221,16 +260,16 @@ def create_qa_task(base_text: str, index: int) -> QuestionAnswerTask:
     answer_should_not_include_criteria = MatchContentCriteria(
         words_array=["?"],
         n_words=1,
-        penalty=0.2,
+        penalty=0.25,
         contentMatchType=ContentMatchTypeEnum.INCLUDES,
         negate_match=True,
         text="Your response should not include any question marks",
     )
 
-    simple_response_layout_criteria = SimpleResponseLayoutCriteria(penalty=0.2)
+    simple_response_layout_criteria = SimpleResponseLayoutCriteria(penalty=0.25)
 
     words_criteria = MatchLengthCriteria(
-        penalty=0.2,
+        penalty=0.25,
         target_length=random.randint(50, 200),
         unit=TextLengthUnitEnum.WORDS,
     )
