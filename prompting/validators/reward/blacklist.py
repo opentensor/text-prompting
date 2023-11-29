@@ -43,9 +43,9 @@ class Blacklist(BaseRewardModel):
 
     def __init__(
         self,
-        boundary: float = 6,
+        boundary: float = 40,
         n_min: int = 5,
-        n_max: int = 14,
+        n_max: int = 10,
         word_limit: int = 2000,
         A: float = 1.3,
         preprocess: str = "[^(\\w|\\s)]",
@@ -213,7 +213,7 @@ class Blacklist(BaseRewardModel):
                 if len(decoded_ngram.split()) >= self.n_min:
                     # calculate significance score for ngram
                     significance_scores[decoded_ngram] = (
-                        self.A ** (len(decoded_ngram) - 1)
+                        self.A ** (len(decoded_ngram.split()) - 1)
                         * ((count[0] + count[1]) / self.num_completion)
                         * self.frequency_multiplier
                     )
@@ -302,7 +302,7 @@ class Blacklist(BaseRewardModel):
                 and fuzz.partial_ratio(ngram, completion.lower())
                 > self.partial_ratio_boundary
             ):
-                reward_event.reward = 1
+                reward_event.reward = 0
                 reward_event.matched_ngram = ngram
                 reward_event.significance_score = score
                 return reward_event

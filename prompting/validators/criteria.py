@@ -241,4 +241,4 @@ class MatchLayoutCriteria(TaskCriterion):
         return penalties
 
     def compose_text(self) -> str:
-        return self.text.format(layout_type=self.layout_type)
+        return self.text.format(layout_type=self.layout_type.value)
