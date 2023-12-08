@@ -68,6 +68,9 @@ def get_config() -> "bt.Config":
     # Using command-line arguments allows users to customize various miner settings.
     parser = argparse.ArgumentParser()
 
+    parser.add_argument(
+        "--axon.port", type=int, default=8098, help="Port to run the axon on."
+    )
     # Subtensor network to connect to
     parser.add_argument(
         "--subtensor.network",
