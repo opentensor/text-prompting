@@ -108,7 +108,11 @@ class Miner(ABC):
             bt.logging.info(f"Running miner on uid: {self.my_subnet_uid}")
 
         # The axon handles request processing, allowing validators to send this process requests.
-        self.axon = axon or bt.axon(wallet=self.wallet, port=self.config.axon.port)
+        self.axon = axon or bt.axon(
+            wallet=self.wallet,
+            port=self.config.axon.port,
+            external_ip=self.config.axon.external_ip,
+        )
         # Attach determiners which functions are called when servicing a request.
         bt.logging.info(f"Attaching forward function to axon.")
         self.axon.attach(
