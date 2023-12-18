@@ -43,7 +43,7 @@ class Blacklist(BaseRewardModel):
 
     def __init__(
         self,
-        boundary: float = 20,
+        boundary: float = 6,
         n_min: int = 5,
         n_max: int = 10,
         word_limit: int = 2000,
@@ -55,6 +55,7 @@ class Blacklist(BaseRewardModel):
         error: float = 0.001,
         memory_lim: int = 1_000_000,
         frequency_multiplier: float = 100,
+        whitelist: list = ['what is the name of']
     ):
         """N-gram blacklist reward model which penalizes overused phrases in the network
 
@@ -72,6 +73,7 @@ class Blacklist(BaseRewardModel):
             error (float, optional): Error parameter for lossy sampling, should be as small as possible, further decreasing it further will increase memory usage. (support should be >> error )
             memory_lim (int, optional): Max number of counter entry to save for memory protection.
             frequency_multiplier (float, optional): Multiplier for phrases frequency. Default to 100.
+            whitelist (list, optional): Whitelist ngram to avoid false positive.
         """
         super().__init__()
 
@@ -103,6 +105,8 @@ class Blacklist(BaseRewardModel):
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
         self.memory_lim = memory_lim
         self.frequency_multiplier = frequency_multiplier
+        
+        self.whitelist = whitelist
 
     def add(self, texts: List[str]):
         """Extract and add n-grams from a list of texts to counter
@@ -210,7 +214,14 @@ class Blacklist(BaseRewardModel):
                 self.support * self.num_completion, self.w_current + 1
             ):
                 decoded_ngram = self.tokenizer.decode(ngram)
-                if len(decoded_ngram.split()) >= self.n_min:
+                
+                whitelisted = False
+                for white_ngram in self.whitelist:
+                    if white_ngram in decoded_ngram:
+                        whitelisted = True
+                        break
+
+                if (not whitelisted) and (len(decoded_ngram.split()) >= self.n_min):
                     # calculate significance score for ngram
                     significance_scores[decoded_ngram] = (
                         self.A ** (len(decoded_ngram.split()) - 1)
