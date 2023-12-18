@@ -43,7 +43,7 @@ class Blacklist(BaseRewardModel):
 
     def __init__(
         self,
-        boundary: float = 5.5,
+        boundary: float = 6,
         n_min: int = 5,
         n_max: int = 10,
         word_limit: int = 2000,
