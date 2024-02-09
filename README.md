@@ -1,4 +1,4 @@
-
+# ⚠️ Deprecated: This project is no longer maintained. We recommend using the new [prompting repository](https://github.com/opentensor/prompting) instead.
 <div align="center">
 
 # **Bittensor Text-Prompting** <!-- omit in toc -->
